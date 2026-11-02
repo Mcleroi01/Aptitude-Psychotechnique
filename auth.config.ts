@@ -25,17 +25,18 @@ export const authConfig = {
       }
       if (pathname.startsWith("/admin")) {
         if (!user) return false;
-        return user.role === "ADMIN" ? true : Response.redirect(new URL("/espace", request.nextUrl));
+        return user.platformRole === "SUPER_ADMIN" ? true : Response.redirect(new URL("/espace", request.nextUrl));
       }
-      if (pathname.startsWith("/espace")) {
+      // L'appartenance à l'organisation est vérifiée côté serveur (requireOrgMember).
+      if (pathname.startsWith("/espace") || pathname.startsWith("/organisation")) {
         return Boolean(user);
       }
       return true;
     },
     session({ session, token }) {
-      if (token.id && token.role) {
+      if (token.id && token.platformRole) {
         session.user.id = token.id;
-        session.user.role = token.role;
+        session.user.platformRole = token.platformRole;
       }
       return session;
     },

@@ -1,11 +1,30 @@
-# BCC Psychotechnique
+# Aptitude Psychotechnique
 
-Plateforme **indépendante** de préparation aux tests psychotechniques numériques utilisés dans les recrutements
-(format de référence : 15 questions en 15 minutes). Elle n'est ni affiliée, ni approuvée, ni gérée par la Banque
-Centrale du Congo.
+Plateforme **indépendante** d'évaluation et de préparation aux tests psychotechniques :
 
-> État : **phase 1 (architecture et initialisation)** terminée. Les phases suivantes ajoutent l'interface publique,
-> l'authentification complète, l'entraînement, le simulateur d'examen, la bibliothèque et l'administration.
+- **candidats** : entraînement corrigé sur la banque Aptitude, examens blancs, suivi des résultats ;
+- **organisations** : banque de questions privée, évaluations en une ou plusieurs épreuves, campagnes de recrutement.
+
+Le moteur est **générique** : aucun nombre de questions, aucune durée ni aucune matière n'est imposé par le code.
+« 15 questions en 15 minutes » n'est qu'un modèle d'évaluation fourni en exemple (seed). Les contenus de préparation
+au thème BCC sont une collection pédagogique parmi d'autres ; la plateforme n'est ni affiliée, ni approuvée, ni gérée
+par la Banque Centrale du Congo.
+
+> État : phases 1 à 3 terminées (architecture, interface publique, comptes et organisations).
+
+## Modèle
+
+| Concept | Rôle |
+|---|---|
+| `Organization`, `Membership` | Espace entreprise et rôles `OWNER`, `ADMIN`, `RECRUITER`, `GRADER` |
+| `Question`, `QuestionOption` | Banque : `organizationId` nul = banque Aptitude, sinon banque privée |
+| `Assessment` → `AssessmentSection` → `AssessmentQuestion` | Évaluation, épreuves (durée, barème, seuil, navigation), questions réutilisées sans duplication |
+| `Campaign`, `Invitation` | Campagne de recrutement publiée et candidats invités |
+| `AssessmentAttempt` → `AttemptSection` → `AttemptAnswer` | Tentative, échéances calculées par le serveur, réponses et notes |
+| `ImportJob`, `ImportItem` | Import CSV/Excel/PDF/image, toujours validé par une personne |
+
+Formats de questions : choix unique, choix multiples, vrai/faux, numérique, texte, texte à compléter ; tout format peut
+porter une image ou un document joint.
 
 ## Stack
 
@@ -36,10 +55,14 @@ tests/          Tests Vitest
 proxy.ts        Redirections optimistes selon la session (ex-middleware)
 ```
 
-Principes de sécurité appliqués dès la phase 1 :
+Principes de sécurité :
 
-- **Autorisation côté serveur** : `requireUser()` / `requireAdmin()` (pages) et `assertUser()` / `assertAdmin()`
-  (Server Actions, routes) dans `lib/guards.ts`. Le proxy ne fait qu'une redirection de confort.
+- **Autorisation côté serveur** (`lib/guards.ts`) : `requireUser()`, `requireSuperAdmin()`, `requireOrgMember(slug,
+  permission)` pour les pages ; `assertUser()`, `assertSuperAdmin()`, `assertOrgPermission()` pour les actions. Les
+  droits par rôle sont centralisés dans `lib/permissions.ts`. L'appartenance à une organisation est relue en base à
+  chaque requête ; un non-membre reçoit une 404. Le proxy ne fait qu'une redirection de confort.
+- **Vérification d'e-mail** : jeton aléatoire à usage unique, seul son hachage SHA-256 est stocké ; confirmation par
+  un clic (les scanners de liens ne peuvent pas la déclencher) ; 3 envois par heure au maximum.
 - **Comptes revérifiés** toutes les 5 minutes dans le JWT : un compte désactivé ou rétrogradé perd ses droits.
 - **Limitation des connexions** : 5 échecs par e-mail et 20 par IP sur 15 minutes (table `LoginAttempt`, sans Redis).
 - **Secrets** : `server-only` empêche d'importer la clé Supabase `service_role` ou Prisma dans du code client.
@@ -52,8 +75,8 @@ Prérequis : Node.js ≥ 20.19 (testé avec Node 24) et un projet [Supabase](htt
 ```bash
 npm install                 # installe et génère le client Prisma
 cp .env.example .env        # puis renseigner les valeurs
-npm run db:migrate          # crée les tables (première migration)
-npm run db:seed             # catégories, examen par défaut, compte admin
+npm run db:deploy           # crée les tables (migrations existantes)
+npm run db:seed             # catégories, évaluation d'exemple, super-administrateur
 npm run dev                 # http://localhost:3000
 ```
 
@@ -76,7 +99,10 @@ npm run dev                 # http://localhost:3000
 | `AUTH_URL` | non | URL publique ; détectée automatiquement sur Vercel |
 | `NEXT_PUBLIC_SUPABASE_URL` | oui (phase 7) | URL du projet Supabase |
 | `SUPABASE_SERVICE_ROLE_KEY` | oui (phase 7) | Clé serveur pour le stockage, jamais exposée au client |
-| `SEED_ADMIN_NAME`, `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD` | seed | Premier compte administrateur |
+| `RESEND_API_KEY` | oui en production | Envoi des e-mails ; sans clé en développement, les liens s'affichent dans la console du serveur |
+| `EMAIL_FROM` | avec Resend | Expéditeur sur un domaine vérifié dans Resend, ex. `Aptitude <noreply@votre-domaine.com>` |
+| `APP_URL` | non | URL publique utilisée dans les e-mails ; à défaut `AUTH_URL` ou l'URL Vercel |
+| `SEED_ADMIN_NAME`, `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD` | seed | Premier compte super-administrateur |
 
 ## Scripts
 
@@ -105,6 +131,7 @@ npm run dev                 # http://localhost:3000
 |---|---|---|
 | Vercel Hobby | Usage non commercial, quotas mensuels d'exécution et de bande passante | Plan Pro, environ 20 $/mois par membre |
 | Supabase Free | 500 Mo de base, 1 Go de stockage, mise en pause après 7 jours d'inactivité | Plan Pro, environ 25 $/mois |
+| Resend Free | 3 000 e-mails/mois, 100/jour, un domaine | Plan payant, environ 20 $/mois |
 
 Un usage commercial (abonnements payants) impose le plan Vercel Pro.
 

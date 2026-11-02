@@ -3,10 +3,10 @@ import { Logo } from "@/components/layout/logo";
 import { siteConfig } from "@/lib/site";
 
 const highlights = [
-  "Exercices corrigés dans 8 catégories et 3 niveaux",
-  "Méthodes rapides et astuces de calcul mental",
-  "Examens blancs de 15 questions en 15 minutes",
-  "Suivi de votre progression par catégorie",
+  "Exercices corrigés par catégorie et par niveau",
+  "Évaluations en une ou plusieurs épreuves",
+  "Durées, barèmes et seuils configurables",
+  "Chronométrage contrôlé par le serveur",
 ];
 
 export default function AuthLayout({ children }: LayoutProps<"/">) {
@@ -16,7 +16,7 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
         <Logo inverted />
         <div className="max-w-md">
           <h2 className="text-3xl leading-tight font-semibold text-balance xl:text-4xl">
-            Préparez votre test psychotechnique avec méthode.
+            Préparez, évaluez et recrutez avec méthode.
           </h2>
           <ul className="mt-8 divide-y divide-white/10 border-y border-white/10">
             {highlights.map((text) => (

@@ -1,4 +1,6 @@
-// Schéma de données — BCC Psychotechnique
+// Schéma de données — Aptitude Psychotechnique
+// Moteur d'évaluation générique : aucune valeur (nombre de questions, durée,
+// matière) n'est imposée par le code ; tout est configuré en base.
 // Les URL de connexion sont définies dans prisma.config.ts (Prisma 7).
 
 generator client {
@@ -12,9 +14,26 @@ datasource db {
 
 // ─── Énumérations ────────────────────────────────────────────────────────────
 
-enum Role {
+enum PlatformRole {
+  SUPER_ADMIN // administrateur de la plateforme
+  USER
+}
+
+enum OrgRole {
+  OWNER
   ADMIN
-  CANDIDATE
+  RECRUITER
+  GRADER // correcteur : notation manuelle uniquement
+}
+
+enum OrgStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum TokenPurpose {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
 }
 
 enum Difficulty {
@@ -23,19 +42,107 @@ enum Difficulty {
   HARD
 }
 
+/// Les questions « avec image » ou « avec document » ne sont pas des formats :
+/// tout format peut recevoir une image (imagePath) et une pièce jointe.
 enum QuestionType {
   SINGLE_CHOICE
+  MULTIPLE_CHOICE
+  TRUE_FALSE
+  NUMERIC
+  TEXT
+  FILL_BLANK
+}
+
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum TimingMode {
+  NONE // pas de limite de temps
+  GLOBAL // une durée pour toute l'évaluation
+  PER_SECTION // une durée propre à chaque épreuve
+}
+
+enum NavigationMode {
+  FREE // retour possible sur les questions précédentes
+  FORWARD_ONLY
+}
+
+enum SelectionMode {
+  FIXED // questions choisies une à une (AssessmentQuestion)
+  RANDOM // tirage au démarrage selon drawRules
+}
+
+enum CampaignStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+  ARCHIVED
+}
+
+enum CampaignAccess {
+  INVITE_ONLY
+  LINK
+}
+
+enum ResultsVisibility {
+  HIDDEN // le candidat ne voit rien
+  SCORE_ONLY
+  FULL_AFTER_SUBMIT // correction détaillée dès la soumission
+  FULL_AFTER_CLOSE // correction détaillée à la clôture de la campagne
+}
+
+enum InvitationStatus {
+  PENDING
+  SENT
+  ACCEPTED
+  REVOKED
 }
 
 enum AttemptMode {
-  PRACTICE
-  EXAM
+  PRACTICE // entraînement libre sur la banque Aptitude
+  CAMPAIGN
 }
 
 enum AttemptStatus {
   IN_PROGRESS
+  PENDING_REVIEW // soumise, des réponses attendent une notation manuelle
+  COMPLETED
+}
+
+enum AttemptEndReason {
   SUBMITTED
-  EXPIRED
+  TIME_EXPIRED
+  CAMPAIGN_CLOSED
+}
+
+enum SectionAttemptStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum ImportSource {
+  CSV
+  XLSX
+  PDF
+  IMAGE
+}
+
+enum ImportStatus {
+  UPLOADED
+  IN_REVIEW
+  COMMITTED
+  FAILED
+  CANCELLED
+}
+
+enum ImportItemStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 enum DocumentCategory {
@@ -53,41 +160,102 @@ enum VerificationStatus {
   PLATFORM_CONTENT // contenu pédagogique produit par la plateforme
 }
 
-// ─── Utilisateurs ────────────────────────────────────────────────────────────
+// ─── Comptes et organisations ────────────────────────────────────────────────
 
 model User {
-  id           String    @id @default(cuid())
-  name         String
-  email        String    @unique
-  passwordHash String
-  role         Role      @default(CANDIDATE)
-  isActive     Boolean   @default(true)
-  lastLoginAt  DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id              String       @id @default(cuid())
+  name            String
+  email           String       @unique
+  passwordHash    String
+  platformRole    PlatformRole @default(USER)
+  emailVerifiedAt DateTime?
+  isActive        Boolean      @default(true)
+  lastLoginAt     DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
-  attempts          ExamAttempt[]
+  memberships       Membership[]
+  tokens            VerificationToken[]
+  attempts          AssessmentAttempt[]
+  gradedAnswers     AttemptAnswer[]     @relation("GradedBy")
+  questions         Question[]
+  assessments       Assessment[]
+  campaigns         Campaign[]
+  importJobs        ImportJob[]
+  reviewedItems     ImportItem[]
   uploadedDocuments Document[]
+  invitations       Invitation[]
 
-  @@index([role])
+  @@index([platformRole])
 }
 
-/// Journal des tentatives de connexion, utilisé pour la limitation (sans Redis).
+model Organization {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  status      OrgStatus @default(ACTIVE)
+  suspendedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  memberships Membership[]
+  categories  Category[]
+  questions   Question[]
+  assessments Assessment[]
+  campaigns   Campaign[]
+  importJobs  ImportJob[]
+  documents   Document[]
+}
+
+model Membership {
+  id             String   @id @default(cuid())
+  userId         String
+  organizationId String
+  role           OrgRole
+  createdAt      DateTime @default(now())
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+  @@index([organizationId, role])
+}
+
+/// Jetons à usage unique (vérification d'e-mail, réinitialisation) : seul le
+/// hachage SHA-256 est stocké, le jeton clair n'existe que dans le lien envoyé.
+model VerificationToken {
+  id        String       @id @default(cuid())
+  userId    String
+  purpose   TokenPurpose
+  tokenHash String       @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime     @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, purpose])
+}
+
+/// Journal des tentatives (connexion, inscription, envois d'e-mails) utilisé
+/// pour la limitation de débit, sans Redis.
 model LoginAttempt {
   id        String   @id @default(cuid())
-  key       String // "email:<adresse>" ou "ip:<adresse>"
+  key       String // "email:<adresse>", "ip:<adresse>", "register:<ip>"…
   success   Boolean
   createdAt DateTime @default(now())
 
   @@index([key, createdAt])
 }
 
-// ─── Banque de questions ─────────────────────────────────────────────────────
+// ─── Banques de questions ────────────────────────────────────────────────────
+// organizationId null = banque Aptitude (plateforme) ; sinon banque privée.
 
 model Category {
   id               String  @id @default(cuid())
+  organizationId   String?
   name             String
-  slug             String  @unique
+  slug             String
   description      String
   /// Comment reconnaître ce type de problème (approche pédagogique)
   recognitionGuide String?
@@ -97,120 +265,327 @@ model Category {
   order            Int     @default(0)
   isActive         Boolean @default(true)
 
-  questions Question[]
-  attempts  ExamAttempt[]
+  organization Organization?       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  questions    Question[]
+  attempts     AssessmentAttempt[]
+
+  @@unique([organizationId, slug])
 }
 
 model Question {
-  id                 String       @id @default(cuid())
-  categoryId         String
-  statement          String
-  imagePath          String? // chemin dans le bucket "question-images"
-  difficulty         Difficulty
-  questionType       QuestionType @default(SINGLE_CHOICE)
-  explanation        String
-  classicMethod      String
-  quickMethod        String
-  tip                String
-  commonMistakes     String
-  /// Temps conseillé : 30 s (facile), 45 s (intermédiaire), 60 s (difficile)
-  recommendedSeconds Int
-  isActive           Boolean      @default(true)
-  createdAt          DateTime     @default(now())
-  updatedAt          DateTime     @updatedAt
+  id                    String        @id @default(cuid())
+  organizationId        String?
+  categoryId            String?
+  type                  QuestionType
+  prompt                String
+  imagePath             String? // bucket "question-images"
+  attachmentPath        String? // bucket privé "documents"
+  attachmentName        String?
+  difficulty            Difficulty    @default(MEDIUM)
+  /// Barème proposé par défaut lors de l'ajout à une épreuve
+  defaultPoints         Float         @default(1)
+  /// Clé de correction hors options (numérique, texte, trous), validée par Zod
+  /// selon le type. Jamais transmise au navigateur pendant une tentative.
+  answerKey             Json          @default("{}")
+  requiresManualGrading Boolean       @default(false)
+  explanation           String?
+  classicMethod         String?
+  quickMethod           String?
+  tip                   String?
+  commonMistakes        String?
+  recommendedSeconds    Int?
+  status                ContentStatus @default(DRAFT)
+  /// Une question déjà utilisée dans une tentative n'est jamais modifiée sur
+  /// place : l'édition crée une nouvelle version (previousVersionId).
+  version               Int           @default(1)
+  isLatest              Boolean       @default(true)
+  previousVersionId     String?       @unique
+  createdById           String?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
 
-  category Category        @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  options  AnswerOption[]
-  answers  AttemptAnswer[]
+  organization        Organization?        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  category            Category?            @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  createdBy           User?                @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  previousVersion     Question?            @relation("QuestionVersions", fields: [previousVersionId], references: [id], onDelete: SetNull)
+  nextVersion         Question?            @relation("QuestionVersions")
+  options             QuestionOption[]
+  assessmentQuestions AssessmentQuestion[]
+  answers             AttemptAnswer[]
+  importItems         ImportItem[]
 
-  @@index([categoryId, difficulty, isActive])
+  @@index([organizationId, status, isLatest])
+  @@index([categoryId, difficulty])
 }
 
-model AnswerOption {
+model QuestionOption {
   id         String  @id @default(cuid())
   questionId String
-  label      String // A, B, C, D, E
+  label      String // A, B, C… (Vrai/Faux : V, F)
   text       String
   isCorrect  Boolean @default(false)
+  order      Int     @default(0)
 
-  question Question        @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  answers  AttemptAnswer[]
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
 
   @@unique([questionId, label])
 }
 
-// ─── Examens et entraînements ────────────────────────────────────────────────
+// ─── Évaluations ─────────────────────────────────────────────────────────────
 
-model ExamConfiguration {
-  id                    String   @id @default(cuid())
-  title                 String
-  description           String?
-  questionCount         Int      @default(15)
-  durationSeconds       Int      @default(900)
-  /// [{ categoryId, count, difficulties: ("EASY"|"MEDIUM"|"HARD")[] }]
-  /// Tableau vide = tirage sur toutes les catégories actives.
-  categoryConfiguration Json     @default("[]")
-  isActive              Boolean  @default(true)
-  isDefault             Boolean  @default(false)
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+model Assessment {
+  id              String        @id @default(cuid())
+  organizationId  String?
+  title           String
+  description     String?
+  instructions    String?
+  timingMode      TimingMode    @default(NONE)
+  /// Requis si timingMode = GLOBAL
+  durationSeconds Int?
+  /// Seuil de réussite global, en pourcentage du score maximal
+  passingPercent  Float?
+  status          ContentStatus @default(DRAFT)
+  createdById     String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 
-  attempts ExamAttempt[]
+  organization Organization?       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy    User?               @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  sections     AssessmentSection[]
+  campaigns    Campaign[]
+  attempts     AssessmentAttempt[]
+
+  @@index([organizationId, status])
 }
 
-/// Une tentative : examen blanc chronométré ou série d'entraînement.
-model ExamAttempt {
-  id              String        @id @default(cuid())
-  userId          String
-  mode            AttemptMode
-  configurationId String?
-  categoryId      String? // entraînement : catégorie choisie
-  difficulty      Difficulty? // entraînement : niveau choisi
-  startedAt       DateTime      @default(now())
-  /// Échéance calculée côté serveur (examen). Null pour l'entraînement libre.
-  expiresAt       DateTime?
-  submittedAt     DateTime?
-  /// Temps réellement utilisé, en secondes
-  durationSeconds Int?
-  /// Nombre de bonnes réponses
-  score           Int?
-  totalQuestions  Int
-  status          AttemptStatus @default(IN_PROGRESS)
+/// Une épreuve : titre, consignes, durée, barème et règles propres.
+model AssessmentSection {
+  id               String         @id @default(cuid())
+  assessmentId     String
+  order            Int
+  title            String
+  description      String?
+  instructions     String?
+  /// Requis si l'évaluation est en mode PER_SECTION
+  durationSeconds  Int?
+  passingPercent   Float?
+  navigationMode   NavigationMode @default(FREE)
+  allowReview      Boolean        @default(true)
+  shuffleQuestions Boolean        @default(false)
+  selectionMode    SelectionMode  @default(FIXED)
+  /// Mode RANDOM : [{ categoryId?, difficulty?, count, points }]
+  drawRules        Json           @default("[]")
 
-  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  configuration ExamConfiguration? @relation(fields: [configurationId], references: [id], onDelete: SetNull)
-  category      Category?          @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  answers       AttemptAnswer[]
+  assessment Assessment           @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  questions  AssessmentQuestion[]
+  attempts   AttemptSection[]
+
+  @@index([assessmentId, order])
+}
+
+/// Association question ↔ épreuve : la question n'est jamais dupliquée.
+model AssessmentQuestion {
+  id             String @id @default(cuid())
+  sectionId      String
+  questionId     String
+  order          Int
+  points         Float  @default(1)
+  negativePoints Float  @default(0)
+
+  section  AssessmentSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  question Question          @relation(fields: [questionId], references: [id], onDelete: Restrict)
+
+  @@unique([sectionId, questionId])
+  @@index([questionId])
+}
+
+// ─── Campagnes et invitations ────────────────────────────────────────────────
+
+model Campaign {
+  id                String            @id @default(cuid())
+  organizationId    String
+  assessmentId      String
+  title             String
+  description       String?
+  status            CampaignStatus    @default(DRAFT)
+  accessMode        CampaignAccess    @default(INVITE_ONLY)
+  /// Jeton public du lien de participation (accessMode = LINK)
+  publicToken       String?           @unique
+  resultsVisibility ResultsVisibility @default(SCORE_ONLY)
+  opensAt           DateTime?
+  closesAt          DateTime?
+  maxAttempts       Int               @default(1)
+  createdById       String?
+  publishedAt       DateTime?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  organization Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  assessment   Assessment          @relation(fields: [assessmentId], references: [id], onDelete: Restrict)
+  createdBy    User?               @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  invitations  Invitation[]
+  attempts     AssessmentAttempt[]
+
+  @@index([organizationId, status])
+}
+
+model Invitation {
+  id         String           @id @default(cuid())
+  campaignId String
+  email      String
+  name       String?
+  /// Hachage SHA-256 du jeton du lien personnel
+  tokenHash  String           @unique
+  status     InvitationStatus @default(PENDING)
+  expiresAt  DateTime?
+  sentAt     DateTime?
+  acceptedAt DateTime?
+  userId     String?
+  createdAt  DateTime         @default(now())
+
+  campaign Campaign            @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  user     User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+  attempts AssessmentAttempt[]
+
+  @@unique([campaignId, email])
+}
+
+// ─── Tentatives ──────────────────────────────────────────────────────────────
+
+model AssessmentAttempt {
+  id               String            @id @default(cuid())
+  userId           String
+  mode             AttemptMode
+  assessmentId     String?
+  campaignId       String?
+  invitationId     String?
+  /// Entraînement libre : filtres choisis
+  categoryId       String?
+  difficulty       Difficulty?
+  status           AttemptStatus     @default(IN_PROGRESS)
+  endReason        AttemptEndReason?
+  startedAt        DateTime          @default(now())
+  /// Échéance globale calculée côté serveur (null = pas de limite globale)
+  deadlineAt       DateTime?
+  submittedAt      DateTime?
+  currentSectionId String?
+  timeSpentSeconds Int?
+  score            Float?
+  maxScore         Float?
+  passed           Boolean?
+
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assessment Assessment?      @relation(fields: [assessmentId], references: [id], onDelete: Restrict)
+  campaign   Campaign?        @relation(fields: [campaignId], references: [id], onDelete: Restrict)
+  invitation Invitation?      @relation(fields: [invitationId], references: [id], onDelete: SetNull)
+  category   Category?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  sections   AttemptSection[]
+  answers    AttemptAnswer[]
 
   @@index([userId, status])
-  @@index([userId, startedAt])
+  @@index([campaignId, status])
+  @@index([status, deadlineAt])
 }
 
-/// Une ligne par question tirée, créée au démarrage (ordre figé).
-model AttemptAnswer {
-  id               String    @id @default(cuid())
+model AttemptSection {
+  id               String               @id @default(cuid())
   attemptId        String
-  questionId       String
-  position         Int
-  selectedOptionId String?
-  isCorrect        Boolean?
-  flagged          Boolean   @default(false)
-  timeSpentMs      Int       @default(0)
-  answeredAt       DateTime?
+  sectionId        String?
+  order            Int
+  title            String
+  status           SectionAttemptStatus @default(NOT_STARTED)
+  startedAt        DateTime?
+  /// Échéance de l'épreuve, bornée par l'échéance globale et la clôture
+  deadlineAt       DateTime?
+  completedAt      DateTime?
+  timeSpentSeconds Int?
+  score            Float?
+  maxScore         Float?
 
-  attempt        ExamAttempt   @relation(fields: [attemptId], references: [id], onDelete: Cascade)
-  question       Question      @relation(fields: [questionId], references: [id], onDelete: Restrict)
-  selectedOption AnswerOption? @relation(fields: [selectedOptionId], references: [id], onDelete: SetNull)
+  attempt AssessmentAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  section AssessmentSection? @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+  answers AttemptAnswer[]
+
+  @@unique([attemptId, order])
+}
+
+/// Une ligne par question tirée, créée au démarrage (ordre et barème figés).
+model AttemptAnswer {
+  id                String    @id @default(cuid())
+  attemptId         String
+  attemptSectionId  String
+  questionId        String
+  position          Int
+  points            Float
+  negativePoints    Float     @default(0)
+  /// Réponse du candidat, forme selon le type (options, nombre, texte, trous)
+  response          Json?
+  answeredAt        DateTime?
+  flagged           Boolean   @default(false)
+  timeSpentMs       Int       @default(0)
+  isCorrect         Boolean?
+  autoScore         Float?
+  manualScore       Float?
+  needsManualReview Boolean   @default(false)
+  feedback          String?
+  gradedById        String?
+  gradedAt          DateTime?
+
+  attempt  AssessmentAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  section  AttemptSection    @relation(fields: [attemptSectionId], references: [id], onDelete: Cascade)
+  question Question          @relation(fields: [questionId], references: [id], onDelete: Restrict)
+  gradedBy User?             @relation("GradedBy", fields: [gradedById], references: [id], onDelete: SetNull)
 
   @@unique([attemptId, questionId])
-  @@unique([attemptId, position])
+  @@unique([attemptSectionId, position])
   @@index([questionId])
+  @@index([needsManualReview])
+}
+
+// ─── Import de questionnaires ────────────────────────────────────────────────
+
+model ImportJob {
+  id             String       @id @default(cuid())
+  organizationId String?
+  source         ImportSource
+  status         ImportStatus @default(UPLOADED)
+  fileName       String
+  storagePath    String?
+  createdById    String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy    User?         @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  items        ImportItem[]
+
+  @@index([organizationId, status])
+}
+
+/// Question candidate à l'import : rien n'est publié sans validation humaine.
+model ImportItem {
+  id           String           @id @default(cuid())
+  jobId        String
+  rowNumber    Int?
+  payload      Json
+  errors       Json             @default("[]")
+  status       ImportItemStatus @default(PENDING)
+  questionId   String?
+  reviewedById String?
+  reviewedAt   DateTime?
+
+  job        ImportJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  question   Question? @relation(fields: [questionId], references: [id], onDelete: SetNull)
+  reviewedBy User?     @relation(fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([jobId, status])
 }
 
 // ─── Bibliothèque documentaire ───────────────────────────────────────────────
 
 model Document {
   id                 String             @id @default(cuid())
+  organizationId     String?
   title              String
   description        String
   category           DocumentCategory
@@ -229,7 +604,8 @@ model Document {
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
 
-  uploadedBy User? @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  uploadedBy   User?         @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
 
-  @@index([isPublished, category])
+  @@index([organizationId, isPublished, category])
 }

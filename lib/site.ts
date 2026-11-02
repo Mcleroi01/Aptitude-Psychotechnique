@@ -1,14 +1,8 @@
 export const siteConfig = {
-  name: "BCC Psychotechnique",
-  shortName: "Psychotechnique",
+  name: "Aptitude Psychotechnique",
+  shortName: "Aptitude",
   description:
-    "Plateforme indépendante de préparation aux tests psychotechniques numériques : entraînement par catégorie, méthodes rapides et examens blancs chronométrés.",
+    "Plateforme d'évaluation et de préparation aux tests psychotechniques : entraînement corrigé, évaluations configurables en plusieurs épreuves et campagnes de recrutement.",
   disclaimer:
-    "Plateforme indépendante de préparation. Elle n'est ni affiliée, ni approuvée, ni gérée par la Banque Centrale du Congo.",
-} as const;
-
-/** Format de référence des examens blancs (modifiable depuis l'administration). */
-export const DEFAULT_EXAM = {
-  questionCount: 15,
-  durationSeconds: 15 * 60,
+    "Aptitude Psychotechnique est une plateforme indépendante. Elle n'est affiliée à aucun recruteur, notamment pas à la Banque Centrale du Congo, et ne publie pas d'épreuves officielles.",
 } as const;

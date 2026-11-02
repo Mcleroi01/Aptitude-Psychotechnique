@@ -5,20 +5,17 @@ import { IconTile } from "@/components/shared/icon-tile";
 import { CtaBand } from "@/components/marketing/cta-band";
 import { FaqSection } from "@/components/marketing/faq";
 import { speedTargets } from "@/lib/content/categories";
-import { DEFAULT_EXAM } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Fonctionnement",
   description: "Les étapes de la préparation : entraînement par catégorie, méthodes rapides, examens blancs et suivi.",
 };
 
-const minutes = DEFAULT_EXAM.durationSeconds / 60;
-
 const steps = [
   { title: "Créez votre compte", text: "L'inscription est gratuite. Votre espace conserve vos résultats et votre historique." },
   { title: "Entraînez-vous par catégorie", text: "Choisissez une catégorie, un niveau et le nombre de questions." },
   { title: "Apprenez les méthodes rapides", text: "Après chaque réponse : solution, méthode rapide, astuce et erreurs fréquentes." },
-  { title: "Passez des examens blancs", text: `${DEFAULT_EXAM.questionCount} questions tirées au hasard en ${minutes} minutes.` },
+  { title: "Passez des examens blancs", text: "Mettez-vous en situation : questions tirées au hasard, temps limité, une ou plusieurs épreuves." },
   { title: "Analysez et ciblez", text: "Le rapport et le tableau de bord indiquent les catégories à retravailler." },
 ];
 
@@ -31,12 +28,12 @@ const pedagogy = [
 ];
 
 const examRules = [
-  `${DEFAULT_EXAM.questionCount} questions à choix multiples, une seule bonne réponse par question.`,
-  `${minutes} minutes au total, soit environ une minute par question.`,
+  "Nombre de questions, durée et barème sont propres à chaque évaluation (par exemple 15 questions en 15 minutes).",
+  "La durée peut porter sur l'ensemble de l'évaluation ou sur chaque épreuve séparément.",
   "Une question affichée à la fois ; vous pouvez passer une question et y revenir.",
   "Le chronomètre est calculé par le serveur : recharger la page ne rend pas de temps.",
   "À la fin du temps, les réponses enregistrées sont soumises automatiquement.",
-  "Une question sans réponse compte zéro point ; il n'y a pas de points négatifs.",
+  "Une question sans réponse compte zéro point, sauf si le barème prévoit des points négatifs, ce qui est alors annoncé.",
 ];
 
 export default function FonctionnementPage() {
@@ -107,7 +104,7 @@ export default function FonctionnementPage() {
 
           <div className="rounded-2xl border bg-secondary/60 p-6 sm:p-8">
             <h3 className="font-heading text-xl font-semibold">Règles des examens blancs</h3>
-            <p className="mt-2 text-sm text-muted-foreground">Format de référence, configurable par l&apos;administration.</p>
+            <p className="mt-2 text-sm text-muted-foreground">Règles générales ; les consignes de chaque évaluation priment.</p>
             <ol className="mt-6 space-y-4">
               {examRules.map((rule, index) => (
                 <li key={rule} className="flex gap-4 text-[0.95rem] leading-relaxed">

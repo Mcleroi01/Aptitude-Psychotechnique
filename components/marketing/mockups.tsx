@@ -16,7 +16,7 @@ export function ExamScreen() {
         <div className="flex items-center gap-1.5">
           <LogoMark inverted className="size-3.5 sm:size-4" />
           <span className="font-heading font-semibold">Examen blanc</span>
-          <span className="hidden text-white/50 sm:inline">· Format standard</span>
+          <span className="hidden text-white/50 sm:inline">· Raisonnement numérique</span>
         </div>
         <span className="flex items-center gap-1 rounded bg-white/10 px-1.5 py-0.5 font-mono font-semibold tabular">
           <Clock className="size-2.5 sm:size-3" /> 08:36

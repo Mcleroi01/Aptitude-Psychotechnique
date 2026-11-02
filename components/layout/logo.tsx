@@ -24,7 +24,7 @@ export function LogoMark({ className, inverted = false }: { className?: string; 
 
 export function Logo({ className, inverted = false }: { className?: string; inverted?: boolean }) {
   return (
-    <Link href="/" className={cn("flex items-center gap-2.5", className)} aria-label="BCC Psychotechnique, accueil">
+    <Link href="/" className={cn("flex items-center gap-2.5", className)} aria-label="Aptitude Psychotechnique, accueil">
       <LogoMark inverted={inverted} />
       <span
         className={cn(
@@ -32,7 +32,7 @@ export function Logo({ className, inverted = false }: { className?: string; inve
           inverted ? "text-white" : "text-foreground",
         )}
       >
-        BCC
+        Aptitude
         <br />
         psychotechnique
       </span>

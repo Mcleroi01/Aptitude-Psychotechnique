@@ -33,6 +33,18 @@ export async function isLoginBlocked(email: string, ip: string): Promise<boolean
   return byEmail >= MAX_FAILURES_PER_EMAIL || byIp >= MAX_FAILURES_PER_IP;
 }
 
+/** Limite générique : au plus `max` actions enregistrées sous `key` dans la fenêtre. */
+export async function isActionLimited(key: string, max: number, windowMs: number): Promise<boolean> {
+  const count = await prisma.loginAttempt.count({
+    where: { key, createdAt: { gte: new Date(Date.now() - windowMs) } },
+  });
+  return count >= max;
+}
+
+export async function recordAction(key: string) {
+  await prisma.loginAttempt.create({ data: { key, success: true } });
+}
+
 const REGISTRATION_WINDOW_MS = 60 * 60 * 1000;
 const MAX_REGISTRATIONS_PER_IP = 5;
 
@@ -42,14 +54,11 @@ function registrationKey(ip: string) {
 
 /** Limite les créations de comptes à 5 par heure et par adresse IP. */
 export async function isRegistrationBlocked(ip: string): Promise<boolean> {
-  const count = await prisma.loginAttempt.count({
-    where: { key: registrationKey(ip), createdAt: { gte: new Date(Date.now() - REGISTRATION_WINDOW_MS) } },
-  });
-  return count >= MAX_REGISTRATIONS_PER_IP;
+  return isActionLimited(registrationKey(ip), MAX_REGISTRATIONS_PER_IP, REGISTRATION_WINDOW_MS);
 }
 
 export async function recordRegistration(ip: string) {
-  await prisma.loginAttempt.create({ data: { key: registrationKey(ip), success: true } });
+  await recordAction(registrationKey(ip));
 }
 
 export async function recordLoginAttempt(email: string, ip: string, success: boolean) {

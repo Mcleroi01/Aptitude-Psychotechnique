@@ -1,8 +1,8 @@
 /**
- * Données initiales : catégories, configuration d'examen par défaut et compte
- * administrateur (si SEED_ADMIN_EMAIL / SEED_ADMIN_PASSWORD sont définis).
- * Idempotent : peut être relancé sans créer de doublons.
- * La banque de questions sera ajoutée en phase 5 (prisma/seed-data/).
+ * Données initiales : catégories de la banque Aptitude, modèle d'évaluation
+ * d'exemple et compte super-administrateur (si SEED_ADMIN_EMAIL /
+ * SEED_ADMIN_PASSWORD sont définis). Idempotent : peut être relancé sans doublons.
+ * Les questions de la banque Aptitude sont ajoutées en phase 4.
  */
 import "dotenv/config";
 import bcrypt from "bcryptjs";
@@ -17,36 +17,56 @@ const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString }) })
 
 async function seedCategories() {
   for (const [index, category] of categories.entries()) {
-    await prisma.category.upsert({
-      where: { slug: category.slug },
-      update: { ...category, order: index },
-      create: { ...category, order: index },
+    // organizationId null = banque Aptitude. L'unicité (null, slug) n'étant pas
+    // garantie par PostgreSQL, on recherche avant de créer.
+    const existing = await prisma.category.findFirst({
+      where: { organizationId: null, slug: category.slug },
+      select: { id: true },
     });
+    const data = { ...category, order: index, organizationId: null };
+    if (existing) await prisma.category.update({ where: { id: existing.id }, data });
+    else await prisma.category.create({ data });
   }
-  console.log(`✔ ${categories.length} catégories`);
+  console.log(`✔ ${categories.length} catégories (banque Aptitude)`);
 }
 
-async function seedDefaultExam() {
-  const existing = await prisma.examConfiguration.findFirst({ where: { isDefault: true } });
+/**
+ * Exemple de configuration, pas une règle : 15 questions tirées au hasard en
+ * 15 minutes. Tout est modifiable ou supprimable depuis l'administration.
+ */
+const EXAMPLE_ASSESSMENT_TITLE = "Examen blanc — exemple 15 questions en 15 minutes";
+
+async function seedExampleAssessment() {
+  const existing = await prisma.assessment.findFirst({
+    where: { organizationId: null, title: EXAMPLE_ASSESSMENT_TITLE },
+    select: { id: true },
+  });
   if (existing) {
-    console.log("• Configuration d'examen par défaut déjà présente");
+    console.log("• Évaluation d'exemple déjà présente");
     return;
   }
-  await prisma.examConfiguration.create({
+  await prisma.assessment.create({
     data: {
-      title: "Examen blanc standard",
-      description: "15 questions en 15 minutes, toutes catégories et tous niveaux confondus.",
-      questionCount: 15,
-      durationSeconds: 900,
-      categoryConfiguration: [],
-      isActive: true,
-      isDefault: true,
+      title: EXAMPLE_ASSESSMENT_TITLE,
+      description: "Questions de raisonnement numérique tirées dans toutes les catégories de la banque Aptitude.",
+      timingMode: "GLOBAL",
+      durationSeconds: 15 * 60,
+      status: "DRAFT", // publiée en phase 4, une fois la banque de questions remplie
+      sections: {
+        create: {
+          order: 0,
+          title: "Raisonnement numérique",
+          instructions: "Une seule bonne réponse par question. Calculatrice non autorisée.",
+          selectionMode: "RANDOM",
+          drawRules: [{ count: 15, points: 1 }],
+        },
+      },
     },
   });
-  console.log("✔ Configuration d'examen par défaut (15 questions / 15 min)");
+  console.log("✔ Évaluation d'exemple (brouillon)");
 }
 
-async function seedAdmin() {
+async function seedSuperAdmin() {
   const email = process.env.SEED_ADMIN_EMAIL?.trim().toLowerCase();
   const password = process.env.SEED_ADMIN_PASSWORD;
   if (!email || !password) {
@@ -58,8 +78,10 @@ async function seedAdmin() {
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
     // Ne modifie jamais le mot de passe d'un compte existant.
-    if (existing.role !== "ADMIN") await prisma.user.update({ where: { email }, data: { role: "ADMIN" } });
-    console.log(`• Administrateur ${email} déjà présent`);
+    if (existing.platformRole !== "SUPER_ADMIN") {
+      await prisma.user.update({ where: { email }, data: { platformRole: "SUPER_ADMIN" } });
+    }
+    console.log(`• Super-administrateur ${email} déjà présent`);
     return;
   }
   await prisma.user.create({
@@ -67,16 +89,18 @@ async function seedAdmin() {
       name: process.env.SEED_ADMIN_NAME?.trim() || "Administrateur",
       email,
       passwordHash: await bcrypt.hash(password, 12),
-      role: "ADMIN",
+      platformRole: "SUPER_ADMIN",
+      // Adresse fournie par l'exploitant de la plateforme lui-même.
+      emailVerifiedAt: new Date(),
     },
   });
-  console.log(`✔ Administrateur ${email}`);
+  console.log(`✔ Super-administrateur ${email}`);
 }
 
 async function main() {
   await seedCategories();
-  await seedDefaultExam();
-  await seedAdmin();
+  await seedExampleAssessment();
+  await seedSuperAdmin();
 }
 
 main()

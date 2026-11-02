@@ -52,16 +52,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } }),
         ]);
 
-        return { id: user.id, name: user.name, email: user.email, role: user.role };
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          platformRole: user.platformRole,
+        };
       },
     }),
   ],
   callbacks: {
     ...authConfig.callbacks,
     async jwt({ token, user }) {
-      if (user?.id && user.role) {
+      if (user?.id && user.platformRole) {
         token.id = user.id;
-        token.role = user.role;
+        token.platformRole = user.platformRole;
         token.checkedAt = Date.now();
         return token;
       }
@@ -69,10 +74,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (token.id && Date.now() - (token.checkedAt ?? 0) > ACCOUNT_RECHECK_MS) {
         const account = await prisma.user.findUnique({
           where: { id: token.id },
-          select: { role: true, isActive: true, name: true },
+          select: { platformRole: true, isActive: true, name: true },
         });
         if (!account || !account.isActive) return null;
-        token.role = account.role;
+        token.platformRole = account.platformRole;
         token.name = account.name;
         token.checkedAt = Date.now();
       }

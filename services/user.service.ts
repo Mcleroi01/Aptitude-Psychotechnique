@@ -11,15 +11,15 @@ export async function hashPassword(password: string) {
   return bcrypt.hash(password, BCRYPT_COST);
 }
 
-/** Crée un compte candidat. Le rôle ADMIN ne peut jamais être obtenu par l'inscription. */
-export async function createCandidate(input: Pick<RegisterInput, "name" | "email" | "password">) {
+/** Crée un compte. Le rôle SUPER_ADMIN ne peut jamais être obtenu par l'inscription. */
+export async function createUser(input: Pick<RegisterInput, "name" | "email" | "password">) {
   try {
     return await prisma.user.create({
       data: {
         name: input.name,
         email: input.email,
         passwordHash: await hashPassword(input.password),
-        role: "CANDIDATE",
+        platformRole: "USER",
       },
       select: { id: true, email: true },
     });

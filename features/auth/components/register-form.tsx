@@ -95,10 +95,15 @@ export function RegisterForm() {
         Créer mon compte
       </Button>
       <p className="text-center text-xs leading-relaxed text-muted-foreground">
-        En créant un compte, vous reconnaissez que cette plateforme est indépendante et n&apos;a aucun lien avec la
-        Banque Centrale du Congo.
+        En créant un compte, vous reconnaissez que cette plateforme est indépendante et n&apos;est affiliée à aucun
+        recruteur.
       </p>
       <p className="text-center text-sm text-muted-foreground">
+        Vous recrutez ?{" "}
+        <Link href="/entreprise/inscription" className="font-semibold text-primary underline-offset-4 hover:underline">
+          Créer un espace entreprise
+        </Link>
+        <br />
         Déjà inscrit ?{" "}
         <Link href="/connexion" className="font-semibold text-primary underline-offset-4 hover:underline">
           Se connecter

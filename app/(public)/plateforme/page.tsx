@@ -18,7 +18,7 @@ const audience = [
 const isList = [
   "Un outil d'entraînement structuré, catégorie par catégorie",
   "Des questions originales, avec corrections et méthodes rapides",
-  "Des examens blancs chronométrés au format 15 questions / 15 minutes",
+  "Des examens blancs chronométrés, en une ou plusieurs épreuves",
   "Un suivi personnel de vos résultats et de votre progression",
 ];
 
@@ -93,7 +93,7 @@ export default function PlateformePage() {
       <Section className="border-t bg-secondary/50">
         <SectionHeading
           title="Une plateforme indépendante"
-          description="BCC Psychotechnique n'est ni affiliée, ni approuvée, ni gérée par la Banque Centrale du Congo."
+          description="Aptitude Psychotechnique n'est affiliée à aucun recruteur. Elle n'est ni approuvée ni gérée par la Banque Centrale du Congo, dont elle ne publie pas les épreuves."
         />
         <div className="mt-12 grid gap-12 md:grid-cols-2">
           <div>

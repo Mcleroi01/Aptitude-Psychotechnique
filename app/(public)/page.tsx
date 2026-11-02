@@ -27,7 +27,7 @@ import { categories } from "@/lib/content/categories";
 const features = [
   { icon: Layers, title: "8 catégories", text: "Suites, calcul mental, logique, pourcentages, fractions, proportions, comparaisons et problèmes." },
   { icon: SlidersHorizontal, title: "3 niveaux", text: "Facile, intermédiaire ou difficile : progressez à votre rythme dans chaque catégorie." },
-  { icon: Timer, title: "Chronomètre", text: "15 minutes pour 15 questions, calculées par le serveur comme lors d'un vrai test." },
+  { icon: Timer, title: "Chronomètre", text: "Temps global ou par épreuve, contrôlé par le serveur comme lors d'un vrai test." },
   { icon: SkipForward, title: "Questions passées", text: "Passez une question bloquante et revenez-y avant la fin du temps." },
   { icon: CircleSlash, title: "Sans points négatifs", text: "Une question sans réponse vaut zéro : apprenez quand il vaut mieux passer." },
   { icon: ListChecks, title: "Corrections", text: "Chaque question a une solution rédigée étape par étape." },
@@ -50,8 +50,8 @@ export default function HomePage() {
             Préparez votre test psychotechnique avec méthode
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-white/65 text-pretty">
-            Exercices corrigés dans 8 catégories, méthodes de calcul rapide et examens blancs de 15 questions en
-            15 minutes, dans les conditions du test.
+            Exercices corrigés dans 8 catégories, méthodes de calcul rapide et examens blancs chronométrés, dans les
+            conditions du test.
           </p>
           <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
             <Button asChild size="xl" variant="sky">
@@ -111,8 +111,8 @@ export default function HomePage() {
               par question : 30 secondes en facile, 45 en intermédiaire, 60 en difficile.
             </p>
             <p>
-              Quand vous êtes prêt, passez à l&apos;examen blanc : 15 questions tirées au hasard dans toutes les
-              catégories, 15 minutes au chronomètre.
+              Quand vous êtes prêt, passez à l&apos;examen blanc : des questions tirées au hasard dans toutes les
+              catégories, avec un temps limité, par exemple 15 questions en 15 minutes.
             </p>
           </FeatureRow>
           <FeatureRow reverse icon={Lightbulb} title="Des corrections pas à pas" visual={<ReviewCard />}>

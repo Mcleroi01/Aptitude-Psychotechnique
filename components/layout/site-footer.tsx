@@ -29,8 +29,8 @@ export function SiteFooter() {
           <div className="max-w-xs">
             <Logo inverted />
             <p className="mt-5 text-sm leading-relaxed text-white/55">
-              Entraînement aux tests psychotechniques numériques : méthodes rapides, exercices corrigés et examens blancs
-              chronométrés.
+              Entraînement aux tests psychotechniques et évaluations de recrutement configurables pour les
+              organisations.
             </p>
           </div>
           <FooterColumn title="Plateforme" links={[...publicNav]} />
@@ -42,6 +42,7 @@ export function SiteFooter() {
             title="Compte"
             links={[
               { href: "/inscription", label: "Créer un compte" },
+              { href: "/entreprise/inscription", label: "Espace entreprise" },
               { href: "/connexion", label: "Connexion" },
             ]}
           />
