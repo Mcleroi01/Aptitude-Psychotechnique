@@ -24,8 +24,8 @@ export default async function EspacePage() {
         </div>
       </header>
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-12">
-        <p className="text-sm font-semibold text-brand-sky">Espace candidat</p>
-        <h1 className="mt-2 text-3xl font-extrabold text-primary">Bonjour {user.name} 👋</h1>
+        <p className="text-sm font-medium text-muted-foreground">Espace candidat</p>
+        <h1 className="mt-2 text-3xl font-semibold">Bonjour {user.name}</h1>
         <p className="mt-3 max-w-xl text-muted-foreground">
           Votre compte est actif. Le tableau de bord, l&apos;entraînement et les examens blancs seront disponibles ici dans
           les prochaines phases.

@@ -1,27 +1,22 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
-/** Emblème : cadran de chronomètre et coche de validation. */
-export function LogoMark({ className }: { className?: string }) {
+/** Emblème : quatre cases de réponse, dont une cochée. */
+export function LogoMark({ className, inverted = false }: { className?: string; inverted?: boolean }) {
+  const fill = inverted ? "fill-white" : "fill-primary";
   return (
-    <svg viewBox="0 0 40 40" aria-hidden className={cn("size-9 shrink-0", className)}>
-      <rect width="40" height="40" rx="11" className="fill-primary" />
-      <rect x="17" y="5.5" width="6" height="3" rx="1.5" className="fill-brand-sky" />
-      <circle cx="20" cy="22" r="10.5" fill="none" strokeWidth="2.6" className="stroke-brand-sky" opacity="0.35" />
+    <svg viewBox="0 0 28 28" aria-hidden className={cn("size-7 shrink-0", className)}>
+      <rect x="1" y="1" width="11" height="11" rx="2.5" className={fill} />
+      <rect x="16" y="1" width="11" height="11" rx="2.5" className={fill} opacity="0.35" />
+      <rect x="1" y="16" width="11" height="11" rx="2.5" className={fill} opacity="0.35" />
+      <rect x="16" y="16" width="11" height="11" rx="2.5" className="fill-brand-sky" />
       <path
-        d="M20 11.5a10.5 10.5 0 0 1 10.5 10.5"
+        d="m4 6.6 2 2 3.2-3.6"
         fill="none"
-        strokeWidth="2.6"
-        strokeLinecap="round"
-        className="stroke-brand-sky"
-      />
-      <path
-        d="m15.2 22.4 3.4 3.3 6.4-6.9"
-        fill="none"
-        strokeWidth="2.8"
+        strokeWidth="1.8"
         strokeLinecap="round"
         strokeLinejoin="round"
-        className="stroke-success"
+        className={inverted ? "stroke-ink" : "stroke-white"}
       />
     </svg>
   );
@@ -29,15 +24,17 @@ export function LogoMark({ className }: { className?: string }) {
 
 export function Logo({ className, inverted = false }: { className?: string; inverted?: boolean }) {
   return (
-    <Link href="/" className={cn("group flex items-center gap-2.5", className)} aria-label="BCC Psychotechnique, accueil">
-      <LogoMark />
-      <span className="flex flex-col leading-none">
-        <span className={cn("font-heading text-[0.95rem] font-extrabold", inverted ? "text-white" : "text-primary")}>
-          BCC Psychotechnique
-        </span>
-        <span className={cn("mt-1 text-[0.68rem] font-medium", inverted ? "text-white/60" : "text-muted-foreground")}>
-          Préparation indépendante
-        </span>
+    <Link href="/" className={cn("flex items-center gap-2.5", className)} aria-label="BCC Psychotechnique, accueil">
+      <LogoMark inverted={inverted} />
+      <span
+        className={cn(
+          "font-heading text-[0.95rem] leading-[1.05] font-semibold tracking-tight",
+          inverted ? "text-white" : "text-foreground",
+        )}
+      >
+        BCC
+        <br />
+        psychotechnique
       </span>
     </Link>
   );

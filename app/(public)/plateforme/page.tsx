@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import { Check, Compass, Eye, ShieldCheck, Sparkles, Users, X } from "lucide-react";
+import { Check, Compass, Eye, ShieldCheck, Sparkles, X } from "lucide-react";
 import { PageHero, Section, SectionHeading } from "@/components/shared/section";
+import { IconTile } from "@/components/shared/icon-tile";
 import { CtaBand } from "@/components/marketing/cta-band";
 
 export const metadata: Metadata = {
@@ -37,7 +38,7 @@ const principles = [
   {
     icon: Eye,
     title: "Transparence documentaire",
-    text: "Chaque document de la bibliothèque affiche sa source et son statut : vérifié, non vérifié ou contenu pédagogique de la plateforme.",
+    text: "Chaque document de la bibliothèque affiche sa source et son statut : vérifié, non vérifié ou contenu de la plateforme.",
   },
   {
     icon: Compass,
@@ -51,83 +52,72 @@ const principles = [
   },
 ];
 
+function CheckList({ items, negative = false }: { items: string[]; negative?: boolean }) {
+  const Icon = negative ? X : Check;
+  return (
+    <ul className="divide-y border-y">
+      {items.map((item) => (
+        <li key={item} className="flex gap-3 py-4 text-[0.95rem]">
+          <Icon className={negative ? "mt-0.5 size-4 shrink-0 text-destructive" : "mt-0.5 size-4 shrink-0 text-success"} aria-hidden />
+          {item}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export default function PlateformePage() {
   return (
     <>
       <PageHero
         eyebrow="La plateforme"
         title="Un espace de préparation pensé pour les candidats"
-        description="BCC Psychotechnique aide les candidats à se préparer aux tests psychotechniques numériques : comprendre les types de questions, maîtriser les méthodes rapides et s'habituer à la pression du chronomètre."
+        description="Comprendre les types de questions, maîtriser les méthodes rapides et s'habituer à la pression du chronomètre."
       />
 
       <Section>
-        <div className="grid gap-12 lg:grid-cols-2">
+        <div className="grid gap-12 lg:grid-cols-2 lg:gap-20">
           <SectionHeading
-            eyebrow="Notre mission"
-            title="Donner à chaque candidat les mêmes chances de se préparer."
+            title="Donner à chaque candidat les moyens de se préparer"
             description="Les tests psychotechniques numériques ne demandent pas de connaissances avancées, mais des réflexes : repérer la structure d'un problème, choisir la bonne méthode, calculer de tête et gérer son temps. Ces réflexes s'acquièrent par un entraînement régulier et bien guidé."
           />
-          <div className="rounded-3xl border bg-card p-6 sm:p-8">
-            <div className="flex items-center gap-3">
-              <span className="flex size-10 items-center justify-center rounded-xl bg-accent text-primary">
-                <Users className="size-5" aria-hidden />
-              </span>
-              <h3 className="font-heading text-lg font-bold text-primary">Pour qui ?</h3>
+          <div>
+            <h3 className="font-heading text-lg font-semibold">À qui s&apos;adresse la plateforme</h3>
+            <div className="mt-5">
+              <CheckList items={audience} />
             </div>
-            <ul className="mt-6 space-y-4">
-              {audience.map((item) => (
-                <li key={item} className="flex gap-3 text-sm leading-relaxed">
-                  <Check className="mt-0.5 size-4 shrink-0 text-success" aria-hidden />
-                  {item}
-                </li>
-              ))}
-            </ul>
           </div>
         </div>
       </Section>
 
-      <Section className="bg-secondary/50">
+      <Section className="border-t bg-secondary/50">
         <SectionHeading
-          align="center"
-          eyebrow="Indépendance"
-          title="Ce que la plateforme est, et ce qu'elle n'est pas"
-          description="BCC Psychotechnique est une initiative indépendante. Elle n'est ni affiliée, ni approuvée, ni gérée par la Banque Centrale du Congo."
+          title="Une plateforme indépendante"
+          description="BCC Psychotechnique n'est ni affiliée, ni approuvée, ni gérée par la Banque Centrale du Congo."
         />
-        <div className="mx-auto mt-12 grid max-w-5xl gap-6 md:grid-cols-2">
-          <div className="rounded-3xl border border-success/25 bg-card p-6 sm:p-8">
-            <h3 className="font-heading text-lg font-bold text-success">La plateforme est</h3>
-            <ul className="mt-5 space-y-3.5">
-              {isList.map((item) => (
-                <li key={item} className="flex gap-3 text-sm leading-relaxed">
-                  <Check className="mt-0.5 size-4 shrink-0 text-success" aria-hidden />
-                  {item}
-                </li>
-              ))}
-            </ul>
+        <div className="mt-12 grid gap-12 md:grid-cols-2">
+          <div>
+            <h3 className="font-heading text-lg font-semibold">Ce que la plateforme est</h3>
+            <div className="mt-5">
+              <CheckList items={isList} />
+            </div>
           </div>
-          <div className="rounded-3xl border border-destructive/20 bg-card p-6 sm:p-8">
-            <h3 className="font-heading text-lg font-bold text-destructive">La plateforme n&apos;est pas</h3>
-            <ul className="mt-5 space-y-3.5">
-              {isNotList.map((item) => (
-                <li key={item} className="flex gap-3 text-sm leading-relaxed">
-                  <X className="mt-0.5 size-4 shrink-0 text-destructive" aria-hidden />
-                  {item}
-                </li>
-              ))}
-            </ul>
+          <div>
+            <h3 className="font-heading text-lg font-semibold">Ce qu&apos;elle n&apos;est pas</h3>
+            <div className="mt-5">
+              <CheckList items={isNotList} negative />
+            </div>
           </div>
         </div>
       </Section>
 
       <Section>
-        <SectionHeading eyebrow="Nos engagements" title="Les principes qui guident la plateforme" />
-        <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {principles.map(({ icon: Icon, title, text }) => (
-            <li key={title} className="rounded-2xl border bg-card p-6">
-              <span className="flex size-10 items-center justify-center rounded-xl bg-primary text-white">
-                <Icon className="size-5" aria-hidden />
-              </span>
-              <h3 className="mt-4 font-heading font-bold text-primary">{title}</h3>
+        <SectionHeading title="Nos engagements" />
+        <ul className="mt-12 grid gap-x-10 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
+          {principles.map(({ icon, title, text }) => (
+            <li key={title}>
+              <IconTile icon={icon} />
+              <h3 className="mt-4 font-heading font-semibold">{title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{text}</p>
             </li>
           ))}

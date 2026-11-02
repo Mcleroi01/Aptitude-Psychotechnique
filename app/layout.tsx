@@ -1,19 +1,19 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, Plus_Jakarta_Sans } from "next/font/google";
+import { Geist_Mono, Inter, Space_Grotesk } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { siteConfig } from "@/lib/site";
 import "./globals.css";
 
-const sans = Geist({
+const sans = Inter({
   variable: "--font-sans",
   subsets: ["latin"],
 });
 
-const heading = Plus_Jakarta_Sans({
+const heading = Space_Grotesk({
   variable: "--font-heading",
   subsets: ["latin"],
-  weight: ["600", "700", "800"],
+  weight: ["500", "600", "700"],
 });
 
 const mono = Geist_Mono({
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#14284b",
+  themeColor: "#0b1428",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

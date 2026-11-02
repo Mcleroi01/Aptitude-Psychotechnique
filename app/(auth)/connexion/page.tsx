@@ -10,7 +10,7 @@ export default async function ConnexionPage({ searchParams }: PageProps<"/connex
 
   return (
     <>
-      <h1 className="text-3xl font-extrabold text-primary">Bon retour !</h1>
+      <h1 className="text-3xl font-semibold">Bon retour !</h1>
       <p className="mt-2 text-muted-foreground">Connectez-vous pour reprendre votre préparation.</p>
       <div className="mt-8">
         <LoginForm callbackUrl={target} />

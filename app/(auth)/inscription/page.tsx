@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "Inscription" };
 export default function InscriptionPage() {
   return (
     <>
-      <h1 className="text-3xl font-extrabold text-primary">Créez votre compte</h1>
+      <h1 className="text-3xl font-semibold">Créez votre compte</h1>
       <p className="mt-2 text-muted-foreground">
         Gratuit. Accédez à l&apos;entraînement, aux examens blancs et à la bibliothèque.
       </p>

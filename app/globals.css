@@ -16,6 +16,8 @@
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
   --color-brand-sky: var(--brand-sky);
+  --color-ink: var(--ink);
+  --color-ink-foreground: var(--ink-foreground);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -55,45 +57,47 @@
 }
 
 :root {
-  /* BCC Psychotechnique — bleu marine, blanc, bleu clair ; vert pour les validations */
-  --background: oklch(0.988 0.004 250);
-  --foreground: oklch(0.22 0.04 262);
+  /* Bleu marine, blanc, bleu clair ; vert réservé aux validations */
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.21 0.03 265);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.22 0.04 262);
+  --card-foreground: oklch(0.21 0.03 265);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.22 0.04 262);
-  --primary: oklch(0.3 0.085 262);
+  --popover-foreground: oklch(0.21 0.03 265);
+  --primary: oklch(0.27 0.07 262);
   --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.955 0.02 245);
-  --secondary-foreground: oklch(0.3 0.085 262);
-  --muted: oklch(0.965 0.008 250);
-  --muted-foreground: oklch(0.5 0.03 258);
-  --accent: oklch(0.93 0.04 240);
-  --accent-foreground: oklch(0.28 0.08 262);
-  --destructive: oklch(0.58 0.22 27);
-  --success: oklch(0.6 0.15 152);
+  --secondary: oklch(0.97 0.006 255);
+  --secondary-foreground: oklch(0.27 0.07 262);
+  --muted: oklch(0.97 0.004 255);
+  --muted-foreground: oklch(0.52 0.025 260);
+  --accent: oklch(0.95 0.025 245);
+  --accent-foreground: oklch(0.27 0.07 262);
+  --destructive: oklch(0.58 0.2 27);
+  --success: oklch(0.58 0.14 152);
   --success-foreground: oklch(0.99 0 0);
-  --success-muted: oklch(0.95 0.05 152);
+  --success-muted: oklch(0.96 0.035 152);
   --warning: oklch(0.75 0.15 75);
-  --warning-foreground: oklch(0.25 0.05 60);
-  --brand-sky: oklch(0.68 0.13 240);
-  --border: oklch(0.91 0.015 250);
-  --input: oklch(0.89 0.018 250);
-  --ring: oklch(0.6 0.14 250);
-  --chart-1: oklch(0.3 0.085 262);
-  --chart-2: oklch(0.62 0.14 245);
-  --chart-3: oklch(0.6 0.15 152);
-  --chart-4: oklch(0.78 0.08 235);
+  --warning-foreground: oklch(0.4 0.09 60);
+  --brand-sky: oklch(0.78 0.1 238);
+  --ink: oklch(0.17 0.035 263);
+  --ink-foreground: oklch(0.97 0.005 255);
+  --border: oklch(0.925 0.007 258);
+  --input: oklch(0.89 0.01 258);
+  --ring: oklch(0.6 0.13 250);
+  --chart-1: oklch(0.27 0.07 262);
+  --chart-2: oklch(0.6 0.13 245);
+  --chart-3: oklch(0.58 0.14 152);
+  --chart-4: oklch(0.78 0.1 238);
   --chart-5: oklch(0.75 0.15 75);
-  --radius: 0.75rem;
-  --sidebar: oklch(0.27 0.075 262);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.17 0.035 263);
   --sidebar-foreground: oklch(0.96 0.01 250);
-  --sidebar-primary: oklch(0.68 0.13 240);
-  --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.33 0.08 262);
+  --sidebar-primary: oklch(0.78 0.1 238);
+  --sidebar-primary-foreground: oklch(0.17 0.035 263);
+  --sidebar-accent: oklch(0.23 0.045 263);
   --sidebar-accent-foreground: oklch(0.99 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.68 0.13 240);
+  --sidebar-ring: oklch(0.78 0.1 238);
 }
 
 .dark {
@@ -118,6 +122,8 @@
   --warning: oklch(0.8 0.14 75);
   --warning-foreground: oklch(0.2 0.04 60);
   --brand-sky: oklch(0.72 0.12 240);
+  --ink: oklch(0.13 0.03 263);
+  --ink-foreground: oklch(0.97 0.005 255);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.6 0.12 250);
@@ -151,6 +157,7 @@
   }
   h1, h2, h3, h4 {
     @apply font-heading tracking-tight;
+    letter-spacing: -0.022em;
   }
 }
 @layer utilities {
@@ -160,17 +167,6 @@
   }
 }
 
-@layer components {
-  /* Fond marine des en-têtes : dégradé discret et quadrillage « feuille d'examen » */
-  .hero-surface {
-    background-color: var(--primary);
-    background-image:
-      radial-gradient(60rem 30rem at 85% -10%, color-mix(in oklch, var(--brand-sky) 35%, transparent), transparent 70%),
-      linear-gradient(color-mix(in oklch, white 6%, transparent) 1px, transparent 1px),
-      linear-gradient(90deg, color-mix(in oklch, white 6%, transparent) 1px, transparent 1px);
-    background-size: auto, 32px 32px, 32px 32px;
-  }
-}
 
 @media (prefers-reduced-motion: no-preference) {
   .animate-rise {

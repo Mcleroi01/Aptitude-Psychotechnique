@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { publicNav } from "@/lib/navigation";
-import { cn } from "@/lib/utils";
 
 function isActive(pathname: string, href: string) {
   return href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -12,16 +11,13 @@ function isActive(pathname: string, href: string) {
 export function DesktopNav() {
   const pathname = usePathname();
   return (
-    <nav aria-label="Navigation principale" className="hidden items-center gap-1 lg:flex">
+    <nav aria-label="Navigation principale" className="hidden items-center gap-0.5 lg:flex">
       {publicNav.map((item) => (
         <Link
           key={item.href}
           href={item.href}
           aria-current={isActive(pathname, item.href) ? "page" : undefined}
-          className={cn(
-            "rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-primary",
-            "aria-[current=page]:text-primary aria-[current=page]:bg-secondary",
-          )}
+          className="rounded-md px-3 py-1.5 text-sm font-medium text-white/70 transition-colors hover:text-white aria-[current=page]:bg-white/10 aria-[current=page]:text-white"
         >
           {item.label}
         </Link>
@@ -33,14 +29,14 @@ export function DesktopNav() {
 export function MobileNavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   return (
-    <nav aria-label="Navigation mobile" className="flex flex-col gap-1">
+    <nav aria-label="Navigation mobile" className="flex flex-col">
       {publicNav.map((item) => (
         <Link
           key={item.href}
           href={item.href}
           onClick={onNavigate}
           aria-current={isActive(pathname, item.href) ? "page" : undefined}
-          className="rounded-lg px-3 py-3 text-base font-medium text-foreground hover:bg-secondary aria-[current=page]:bg-secondary aria-[current=page]:text-primary"
+          className="border-b py-3.5 text-base font-medium text-foreground aria-[current=page]:text-primary aria-[current=page]:font-semibold"
         >
           {item.label}
         </Link>
