@@ -1,0 +1,235 @@
+// Schéma de données — BCC Psychotechnique
+// Les URL de connexion sont définies dans prisma.config.ts (Prisma 7).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Énumérations ────────────────────────────────────────────────────────────
+
+enum Role {
+  ADMIN
+  CANDIDATE
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum QuestionType {
+  SINGLE_CHOICE
+}
+
+enum AttemptMode {
+  PRACTICE
+  EXAM
+}
+
+enum AttemptStatus {
+  IN_PROGRESS
+  SUBMITTED
+  EXPIRED
+}
+
+enum DocumentCategory {
+  QUESTIONNAIRE
+  COMMUNIQUE
+  INSTITUTIONNEL
+  INFO_BCC
+  MATHS_FONDAMENTAUX
+  PREPARATION
+}
+
+enum VerificationStatus {
+  OFFICIAL_VERIFIED // document dont l'origine officielle a été vérifiée
+  UNVERIFIED // document reçu mais dont l'origine n'est pas confirmée
+  PLATFORM_CONTENT // contenu pédagogique produit par la plateforme
+}
+
+// ─── Utilisateurs ────────────────────────────────────────────────────────────
+
+model User {
+  id           String    @id @default(cuid())
+  name         String
+  email        String    @unique
+  passwordHash String
+  role         Role      @default(CANDIDATE)
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  attempts          ExamAttempt[]
+  uploadedDocuments Document[]
+
+  @@index([role])
+}
+
+/// Journal des tentatives de connexion, utilisé pour la limitation (sans Redis).
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  key       String // "email:<adresse>" ou "ip:<adresse>"
+  success   Boolean
+  createdAt DateTime @default(now())
+
+  @@index([key, createdAt])
+}
+
+// ─── Banque de questions ─────────────────────────────────────────────────────
+
+model Category {
+  id               String  @id @default(cuid())
+  name             String
+  slug             String  @unique
+  description      String
+  /// Comment reconnaître ce type de problème (approche pédagogique)
+  recognitionGuide String?
+  /// Gestion du temps conseillée pour ce type de problème
+  timeManagement   String?
+  icon             String? // nom d'icône lucide
+  order            Int     @default(0)
+  isActive         Boolean @default(true)
+
+  questions Question[]
+  attempts  ExamAttempt[]
+}
+
+model Question {
+  id                 String       @id @default(cuid())
+  categoryId         String
+  statement          String
+  imagePath          String? // chemin dans le bucket "question-images"
+  difficulty         Difficulty
+  questionType       QuestionType @default(SINGLE_CHOICE)
+  explanation        String
+  classicMethod      String
+  quickMethod        String
+  tip                String
+  commonMistakes     String
+  /// Temps conseillé : 30 s (facile), 45 s (intermédiaire), 60 s (difficile)
+  recommendedSeconds Int
+  isActive           Boolean      @default(true)
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  category Category        @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  options  AnswerOption[]
+  answers  AttemptAnswer[]
+
+  @@index([categoryId, difficulty, isActive])
+}
+
+model AnswerOption {
+  id         String  @id @default(cuid())
+  questionId String
+  label      String // A, B, C, D, E
+  text       String
+  isCorrect  Boolean @default(false)
+
+  question Question        @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  answers  AttemptAnswer[]
+
+  @@unique([questionId, label])
+}
+
+// ─── Examens et entraînements ────────────────────────────────────────────────
+
+model ExamConfiguration {
+  id                    String   @id @default(cuid())
+  title                 String
+  description           String?
+  questionCount         Int      @default(15)
+  durationSeconds       Int      @default(900)
+  /// [{ categoryId, count, difficulties: ("EASY"|"MEDIUM"|"HARD")[] }]
+  /// Tableau vide = tirage sur toutes les catégories actives.
+  categoryConfiguration Json     @default("[]")
+  isActive              Boolean  @default(true)
+  isDefault             Boolean  @default(false)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  attempts ExamAttempt[]
+}
+
+/// Une tentative : examen blanc chronométré ou série d'entraînement.
+model ExamAttempt {
+  id              String        @id @default(cuid())
+  userId          String
+  mode            AttemptMode
+  configurationId String?
+  categoryId      String? // entraînement : catégorie choisie
+  difficulty      Difficulty? // entraînement : niveau choisi
+  startedAt       DateTime      @default(now())
+  /// Échéance calculée côté serveur (examen). Null pour l'entraînement libre.
+  expiresAt       DateTime?
+  submittedAt     DateTime?
+  /// Temps réellement utilisé, en secondes
+  durationSeconds Int?
+  /// Nombre de bonnes réponses
+  score           Int?
+  totalQuestions  Int
+  status          AttemptStatus @default(IN_PROGRESS)
+
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  configuration ExamConfiguration? @relation(fields: [configurationId], references: [id], onDelete: SetNull)
+  category      Category?          @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  answers       AttemptAnswer[]
+
+  @@index([userId, status])
+  @@index([userId, startedAt])
+}
+
+/// Une ligne par question tirée, créée au démarrage (ordre figé).
+model AttemptAnswer {
+  id               String    @id @default(cuid())
+  attemptId        String
+  questionId       String
+  position         Int
+  selectedOptionId String?
+  isCorrect        Boolean?
+  flagged          Boolean   @default(false)
+  timeSpentMs      Int       @default(0)
+  answeredAt       DateTime?
+
+  attempt        ExamAttempt   @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question       Question      @relation(fields: [questionId], references: [id], onDelete: Restrict)
+  selectedOption AnswerOption? @relation(fields: [selectedOptionId], references: [id], onDelete: SetNull)
+
+  @@unique([attemptId, questionId])
+  @@unique([attemptId, position])
+  @@index([questionId])
+}
+
+// ─── Bibliothèque documentaire ───────────────────────────────────────────────
+
+model Document {
+  id                 String             @id @default(cuid())
+  title              String
+  description        String
+  category           DocumentCategory
+  /// Type MIME : application/pdf, image/png, image/jpeg, image/webp
+  fileType           String
+  fileSize           Int
+  /// Chemin dans le bucket privé "documents" — l'URL est signée à la demande.
+  storagePath        String             @unique
+  source             String
+  documentDate       DateTime?
+  verificationStatus VerificationStatus @default(UNVERIFIED)
+  isPublished        Boolean            @default(false)
+  /// Si vrai, réservé aux utilisateurs connectés
+  requiresAuth       Boolean            @default(true)
+  uploadedById       String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  uploadedBy User? @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  @@index([isPublished, category])
+}
