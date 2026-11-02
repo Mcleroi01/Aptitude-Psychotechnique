@@ -8,6 +8,7 @@ import { QuestionView, type ViewFeedback } from "@/features/questions/components
 import type { QuestionResponse } from "@/lib/questions/answer-key";
 import { gradeResponse, type GradeResult } from "@/lib/questions/grading";
 import { countBlanks, optionLabel, questionTypeLabels } from "@/lib/questions/labels";
+import { describeExpected } from "@/lib/questions/correction";
 import type { CandidateQuestion } from "@/lib/questions/public";
 import { questionEditorSchema, toQuestionData, type QuestionEditorValues } from "@/schemas/question";
 
@@ -41,7 +42,7 @@ export function QuestionPreview({ values, media }: { values: QuestionEditorValue
     setResult({
       grade,
       feedback: { correctLabels: data.options.filter((o) => o.isCorrect).map((o) => o.label) },
-      expected: describeExpected(data),
+      expected: describeExpected(data.type, data.answerKey),
     });
   };
 
@@ -134,19 +135,3 @@ function toPreviewQuestion(values: QuestionEditorValues, media: Media): Candidat
   };
 }
 
-function describeExpected(data: ReturnType<typeof toQuestionData>): string {
-  const key = data.answerKey as Record<string, unknown>;
-  switch (data.type) {
-    case "NUMERIC": {
-      const value = String(key.value).replace(".", ",");
-      const tolerance = Number(key.tolerance) > 0 ? ` ± ${String(key.tolerance).replace(".", ",")}` : "";
-      return `${value}${tolerance}${key.unit ? ` ${key.unit}` : ""}`;
-    }
-    case "TEXT":
-      return (key.acceptedAnswers as string[]).join(" / ");
-    case "FILL_BLANK":
-      return (key.blanks as { accepted: string[] }[]).map((b, i) => `trou ${i + 1} : ${b.accepted.join(" / ")}`).join(" · ");
-    default:
-      return "";
-  }
-}

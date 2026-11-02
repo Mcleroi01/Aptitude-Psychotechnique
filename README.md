@@ -10,9 +10,19 @@ Le moteur est **générique** : aucun nombre de questions, aucune durée ni aucu
 au thème BCC sont une collection pédagogique parmi d'autres ; la plateforme n'est ni affiliée, ni approuvée, ni gérée
 par la Banque Centrale du Congo.
 
-> État : phases 1 à 5 terminées (architecture, interface publique, comptes et organisations, banques et éditeur de
-> questions, évaluations et campagnes). Une évaluation utilisée par une campagne publiée est figée : on la duplique
-> pour créer une variante.
+> État : phases 1 à 6 terminées (architecture, interface publique, comptes et organisations, banques et éditeur de
+> questions, évaluations et campagnes, passage des épreuves). Une évaluation utilisée par une campagne publiée est
+> figée : on la duplique pour créer une variante.
+
+## Passage des épreuves
+
+- **Horloge du serveur seule** : échéances calculées au démarrage (durée globale, durée de l'épreuve au moment où le
+  candidat la commence, clôture de la campagne). Le navigateur n'affiche qu'un compte à rebours recalé sur le serveur.
+- **Enregistrement au fil de l'eau** (tolérance réseau de 3 s après zéro), reprise après coupure ou rechargement.
+- **Soumission automatique** : à zéro par le navigateur ; sinon à la première consultation de la tentative ; en dernier
+  recours par `/api/cron/expire-attempts` (Vercel Cron, quotidien, protégé par `CRON_SECRET`).
+- Aucune clé de correction n'est envoyée au navigateur pendant une tentative, sauf la correction d'une question
+  vérifiée en mode entraînement.
 
 ## Modèle
 
@@ -106,6 +116,7 @@ npm run dev                 # http://localhost:3000
 | `SUPABASE_SERVICE_ROLE_KEY` | oui (phase 7) | Clé serveur pour le stockage, jamais exposée au client |
 | `RESEND_API_KEY` | oui en production | Envoi des e-mails ; sans clé en développement, les liens s'affichent dans la console du serveur |
 | `EMAIL_FROM` | avec Resend | Expéditeur sur un domaine vérifié dans Resend, ex. `Aptitude <noreply@votre-domaine.com>` |
+| `CRON_SECRET` | en production | Secret de la tâche planifiée de clôture des tentatives (Vercel l'envoie automatiquement) |
 | `APP_URL` | non | URL publique utilisée dans les e-mails ; à défaut `AUTH_URL` ou l'URL Vercel |
 | `SEED_ADMIN_NAME`, `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD` | seed | Premier compte super-administrateur |
 
@@ -126,9 +137,9 @@ npm run dev                 # http://localhost:3000
 
 1. Pousser le dépôt sur GitHub, puis l'importer dans Vercel (framework détecté : Next.js).
 2. Renseigner toutes les variables ci-dessus dans **Settings → Environment Variables**.
-3. Dans **Settings → Build and Deployment**, définir **Build Command** = `npm run vercel-build`
-   (`prisma generate && prisma migrate deploy && next build`). Les migrations sont ainsi appliquées
-   automatiquement avant chaque build de production.
+3. `vercel.json` définit la commande de build `npm run vercel-build`
+   (`prisma generate && prisma migrate deploy && next build`) : les migrations sont appliquées automatiquement
+   avant chaque build. Il déclare aussi la tâche planifiée quotidienne (offre gratuite : une exécution par jour).
 4. Lancer le seed une fois depuis votre poste, pointé sur la base de production : `npm run db:seed`.
 
 ## Offres gratuites et coûts

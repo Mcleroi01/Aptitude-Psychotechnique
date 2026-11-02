@@ -144,8 +144,7 @@ export function CampaignManager({ slug, campaign, participationUrl }: { slug: st
             </Button>
           </div>
           <p className="mt-2 text-sm text-muted-foreground">
-            Le passage des épreuves par les candidats est livré à l&apos;étape suivante du développement : ce lien deviendra
-            actif à ce moment-là.
+            Toute personne disposant de ce lien peut consulter la campagne ; elle doit se connecter pour participer.
           </p>
         </section>
       )}
