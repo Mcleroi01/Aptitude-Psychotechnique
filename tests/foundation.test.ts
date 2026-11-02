@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import { AppError, runAction, toActionError } from "@/lib/errors";
 import { loginSchema, registerSchema } from "@/schemas/auth";
-import { categories } from "@/prisma/seed-data/categories";
+import { categories } from "@/lib/content/categories";
 
 describe("gestion centralisée des erreurs", () => {
   it("transmet le message d'une AppError", () => {
