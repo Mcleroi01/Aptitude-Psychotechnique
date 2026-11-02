@@ -9,12 +9,12 @@ export const generalFaq: FaqItem[] = [
     a: "Non. Toutes les questions sont originales et conçues pour l'entraînement à partir des types d'exercices courants. Aucune n'est présentée comme issue d'une épreuve officielle.",
   },
   {
-    q: "La plateforme est-elle liée à la Banque Centrale du Congo ?",
-    a: "Non. C'est une plateforme indépendante de préparation, sans lien avec la Banque Centrale du Congo ni avec aucun recruteur.",
+    q: "La plateforme est-elle liée à un employeur ?",
+    a: "Non. C'est une plateforme indépendante, sans lien avec aucun employeur ni organisme de recrutement. Les entreprises peuvent l'utiliser pour leurs propres évaluations.",
   },
   {
     q: "Faut-il un compte pour s'entraîner ?",
-    a: "Oui. Le compte est gratuit ; il permet de conserver vos résultats, votre historique d'examens et votre progression par catégorie.",
+    a: "Non. Entraînement et examens blancs sont accessibles librement. Un compte gratuit, créé en un clic depuis un lien reçu par e-mail, conserve votre historique et votre progression.",
   },
   {
     q: "Puis-je utiliser la plateforme sur mon téléphone ?",

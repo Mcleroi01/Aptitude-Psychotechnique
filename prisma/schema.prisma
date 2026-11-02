@@ -149,7 +149,7 @@ enum DocumentCategory {
   QUESTIONNAIRE
   COMMUNIQUE
   INSTITUTIONNEL
-  INFO_BCC
+  INFO_RECRUTEMENT
   MATHS_FONDAMENTAUX
   PREPARATION
 }
@@ -166,7 +166,8 @@ model User {
   id              String       @id @default(cuid())
   name            String
   email           String       @unique
-  passwordHash    String
+  /// Null pour un compte créé par lien de connexion e-mail (sans mot de passe)
+  passwordHash    String?
   platformRole    PlatformRole @default(USER)
   emailVerifiedAt DateTime?
   isActive        Boolean      @default(true)
@@ -235,6 +236,21 @@ model VerificationToken {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, purpose])
+}
+
+/// Lien de connexion envoyé par e-mail : connecte un compte existant ou en crée
+/// un à la première utilisation. Seul le hachage du jeton est conservé.
+model EmailLoginToken {
+  id        String    @id @default(cuid())
+  email     String
+  /// Nom saisi lors d'une demande de création de compte
+  name      String?
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([email, createdAt])
 }
 
 /// Journal des tentatives (connexion, inscription, envois d'e-mails) utilisé
@@ -452,9 +468,12 @@ model Invitation {
 
 // ─── Tentatives ──────────────────────────────────────────────────────────────
 
+/// Tentative d'un utilisateur connecté (userId) ou d'un invité (guestId :
+/// hachage du jeton stocké dans un cookie httpOnly). Les campagnes exigent un compte.
 model AssessmentAttempt {
   id               String            @id @default(cuid())
-  userId           String
+  userId           String?
+  guestId          String?
   mode             AttemptMode
   assessmentId     String?
   campaignId       String?
@@ -474,7 +493,7 @@ model AssessmentAttempt {
   maxScore         Float?
   passed           Boolean?
 
-  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user       User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
   assessment Assessment?      @relation(fields: [assessmentId], references: [id], onDelete: Restrict)
   campaign   Campaign?        @relation(fields: [campaignId], references: [id], onDelete: Restrict)
   invitation Invitation?      @relation(fields: [invitationId], references: [id], onDelete: SetNull)
@@ -483,6 +502,7 @@ model AssessmentAttempt {
   answers    AttemptAnswer[]
 
   @@index([userId, status])
+  @@index([guestId, status])
   @@index([campaignId, status])
   @@index([status, deadlineAt])
 }

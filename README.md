@@ -6,9 +6,8 @@ Plateforme **indépendante** d'évaluation et de préparation aux tests psychote
 - **organisations** : banque de questions privée, évaluations en une ou plusieurs épreuves, campagnes de recrutement.
 
 Le moteur est **générique** : aucun nombre de questions, aucune durée ni aucune matière n'est imposé par le code.
-« 15 questions en 15 minutes » n'est qu'un modèle d'évaluation fourni en exemple (seed). Les contenus de préparation
-au thème BCC sont une collection pédagogique parmi d'autres ; la plateforme n'est ni affiliée, ni approuvée, ni gérée
-par la Banque Centrale du Congo.
+« 15 questions en 15 minutes » n'est qu'un modèle d'évaluation fourni en exemple (seed). La plateforme est
+indépendante : elle n'est affiliée à aucun employeur ni organisme de recrutement.
 
 > État : phases 1 à 7 terminées (architecture, interface publique, comptes et organisations, banques et éditeur de
 > questions, évaluations et campagnes, passage des épreuves, correction et rapports). Une évaluation utilisée par une campagne publiée est

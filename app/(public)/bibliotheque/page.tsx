@@ -25,7 +25,7 @@ const documentTypes = [
   { icon: GraduationCap, title: "Notions de mathématiques", text: "Rappels : pourcentages, fractions, proportionnalité, suites." },
   { icon: BookOpen, title: "Ressources de préparation", text: "Fiches méthode, gestion du temps et du stress." },
   { icon: Megaphone, title: "Communiqués de recrutement", text: "Avis publics relayés avec leur source." },
-  { icon: Landmark, title: "Informations sur la BCC", text: "Repères institutionnels utiles à la culture générale." },
+  { icon: Landmark, title: "Informations sur le recrutement", text: "Repères sur les métiers, les concours et les étapes d'une sélection." },
   { icon: Building2, title: "Documents institutionnels", text: "Textes de référence publics, avec leur provenance." },
   { icon: ImageIcon, title: "Images et captures", text: "Illustrations et exemples de mise en forme." },
 ];

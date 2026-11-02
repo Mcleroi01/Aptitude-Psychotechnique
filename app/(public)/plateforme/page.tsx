@@ -23,7 +23,7 @@ const isList = [
 ];
 
 const isNotList = [
-  "Un site officiel de la Banque Centrale du Congo ou d'un autre recruteur",
+  "Le site officiel d'un employeur ou d'un organisme de recrutement",
   "Un service d'inscription ou de candidature à un recrutement",
   "Une source de sujets officiels ou de réponses à un test réel",
   "Une garantie de réussite : seul votre entraînement fait la différence",
@@ -93,7 +93,7 @@ export default function PlateformePage() {
       <Section className="border-t bg-secondary/50">
         <SectionHeading
           title="Une plateforme indépendante"
-          description="Aptitude Psychotechnique n'est affiliée à aucun recruteur. Elle n'est ni approuvée ni gérée par la Banque Centrale du Congo, dont elle ne publie pas les épreuves."
+          description="Aptitude Psychotechnique n'est affiliée à aucun employeur ni organisme de recrutement, et ne publie aucune épreuve officielle."
         />
         <div className="mt-12 grid gap-12 md:grid-cols-2">
           <div>

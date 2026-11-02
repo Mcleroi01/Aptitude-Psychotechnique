@@ -51,7 +51,9 @@ export async function getCampaignResults(organizationId: string, campaignId: str
     },
   });
 
-  const finished = attempts.filter((a) => a.status !== "IN_PROGRESS");
+  // Une campagne exige un compte : le repli ne sert qu'à satisfaire le typage.
+  const withUser = attempts.map((a) => ({ ...a, user: a.user ?? { name: "Compte supprimé", email: "—" } }));
+  const finished = withUser.filter((a) => a.status !== "IN_PROGRESS");
   const percents = finished.map((a) => percentOf(a.score ?? 0, a.maxScore ?? 0));
 
   // Moyennes par épreuve (rapprochées par épreuve d'origine, l'ordre pouvant être identique).
@@ -81,9 +83,9 @@ export async function getCampaignResults(organizationId: string, campaignId: str
 
   return {
     campaign,
-    attempts: attempts.map((a) => ({ ...a, percent: a.status === "IN_PROGRESS" ? null : percentOf(a.score ?? 0, a.maxScore ?? 0) })),
+    attempts: withUser.map((a) => ({ ...a, percent: a.status === "IN_PROGRESS" ? null : percentOf(a.score ?? 0, a.maxScore ?? 0) })),
     stats: {
-      participants: new Set(attempts.map((a) => a.user.email)).size,
+      participants: new Set(withUser.map((a) => a.user.email)).size,
       finished: finished.length,
       inProgress: attempts.length - finished.length,
       pendingReview: attempts.filter((a) => a.status === "PENDING_REVIEW").length,
@@ -105,7 +107,7 @@ export async function getAttemptForOrganization(organizationId: string, attemptI
     where: { id: attemptId, campaign: { organizationId } },
     select: { user: { select: { name: true, email: true } } },
   });
-  if (!owner) throw new AppError("NOT_FOUND", "Tentative introuvable.");
+  if (!owner?.user) throw new AppError("NOT_FOUND", "Tentative introuvable.");
   const attempt = await getAttemptState(attemptId);
   return { candidate: owner.user, result: await buildFullResult(attempt) };
 }
