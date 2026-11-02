@@ -10,8 +10,8 @@ Le moteur est **générique** : aucun nombre de questions, aucune durée ni aucu
 au thème BCC sont une collection pédagogique parmi d'autres ; la plateforme n'est ni affiliée, ni approuvée, ni gérée
 par la Banque Centrale du Congo.
 
-> État : phases 1 à 6 terminées (architecture, interface publique, comptes et organisations, banques et éditeur de
-> questions, évaluations et campagnes, passage des épreuves). Une évaluation utilisée par une campagne publiée est
+> État : phases 1 à 7 terminées (architecture, interface publique, comptes et organisations, banques et éditeur de
+> questions, évaluations et campagnes, passage des épreuves, correction et rapports). Une évaluation utilisée par une campagne publiée est
 > figée : on la duplique pour créer une variante.
 
 ## Passage des épreuves
@@ -23,6 +23,16 @@ par la Banque Centrale du Congo.
   recours par `/api/cron/expire-attempts` (Vercel Cron, quotidien, protégé par `CRON_SECRET`).
 - Aucune clé de correction n'est envoyée au navigateur pendant une tentative, sauf la correction d'une question
   vérifiée en mode entraînement.
+
+## Correction et rapports
+
+- **File de correction** anonyme (code de copie) pour les rôles `OWNER`, `ADMIN` et `GRADER` ; toute note, y compris
+  l'ajustement d'une note automatique, recalcule aussitôt le score et la réussite de la tentative.
+- **Résultats de campagne** : moyenne, médiane, taux de réussite, répartition, scores par épreuve et par catégorie,
+  temps moyen, détail par candidat.
+- **Exports** : CSV (séparateur « ; », compatible Excel, protection contre l'injection de formules) et rapports PDF
+  générés côté serveur avec `pdf-lib` ; le candidat peut télécharger sa synthèse si l'organisation communique les
+  résultats. Réponses non mises en cache (`no-store`).
 
 ## Modèle
 

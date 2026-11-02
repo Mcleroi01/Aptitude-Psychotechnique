@@ -14,7 +14,16 @@ const endReasonText = {
 
 const pct = (score: number, max: number) => (max > 0 ? Math.round((score / max) * 1000) / 10 : 0);
 
-export function AttemptResultView({ result }: { result: AttemptResult }) {
+type ResultItem = AttemptResult["items"][number];
+
+/** Composant serveur : `renderItemExtra` ajoute un bloc sous chaque question (notation côté organisation). */
+export function AttemptResultView({
+  result,
+  renderItemExtra,
+}: {
+  result: AttemptResult;
+  renderItemExtra?: (item: ResultItem) => React.ReactNode;
+}) {
   const { summary } = result;
 
   return (
@@ -127,6 +136,7 @@ export function AttemptResultView({ result }: { result: AttemptResult }) {
                   </header>
                   <ReadOnlyQuestion question={item.question} response={item.response} correctLabels={item.correction.correctLabels} />
                   <CorrectionPanel correction={item.correction} points={item.points} feedback={item.feedback} />
+                  {renderItemExtra?.(item)}
                 </article>
               ))}
             </section>

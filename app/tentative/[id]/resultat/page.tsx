@@ -29,6 +29,11 @@ export default async function ResultatPage({ params }: PageProps<"/tentative/[id
         <Button asChild variant="outline">
           <Link href="/espace">Mon espace</Link>
         </Button>
+        {result.access !== "none" && (
+          <Button asChild variant="outline">
+            <a href={`/tentative/${id}/resultat/pdf`}>Télécharger la synthèse (PDF)</a>
+          </Button>
+        )}
         {!result.campaignId && (
           <Button asChild>
             <Link href="/espace/entrainement">Nouvel entraînement</Link>

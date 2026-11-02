@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Archive, CircleStop, Copy, Loader2, Rocket } from "lucide-react";
+import { Archive, BarChart3, CircleStop, Copy, Loader2, Rocket } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -86,6 +86,13 @@ export function CampaignManager({ slug, campaign, participationUrl }: { slug: st
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          {!draft && (
+            <Button asChild variant="outline">
+              <Link href={`/organisation/${slug}/campagnes/${campaign.id}/resultats`}>
+                <BarChart3 data-icon="inline-start" /> Résultats
+              </Link>
+            </Button>
+          )}
           {draft && (
             <Button
               disabled={pending}

@@ -83,7 +83,19 @@ export function QuestionView({ question, response, onChange, disabled, feedback,
         </>
       )}
 
-      {question.type === "NUMERIC" && (
+      {disabled && (question.type === "NUMERIC" || question.type === "TEXT") ? (
+        <ReadOnlyAnswer
+          text={
+            response && "value" in response
+              ? `${String(response.value).replace(".", ",")}${question.unit ? ` ${question.unit}` : ""}`
+              : response && "text" in response
+                ? response.text
+                : ""
+          }
+        />
+      ) : null}
+
+      {question.type === "NUMERIC" && !disabled && (
         <div className="flex max-w-xs items-center gap-3">
           <Input
             inputMode="decimal"
@@ -102,7 +114,7 @@ export function QuestionView({ question, response, onChange, disabled, feedback,
         </div>
       )}
 
-      {question.type === "TEXT" && (
+      {question.type === "TEXT" && !disabled && (
         <Textarea
           aria-label="Votre réponse"
           placeholder="Votre réponse"
@@ -121,6 +133,16 @@ export function QuestionView({ question, response, onChange, disabled, feedback,
           disabled={disabled}
         />
       )}
+    </div>
+  );
+}
+
+/** Réponse saisie, affichée en clair (correction, revue). */
+function ReadOnlyAnswer({ text }: { text: string }) {
+  return (
+    <div className="rounded-lg border bg-muted/40 px-3.5 py-3">
+      <p className="text-xs font-medium text-muted-foreground">Réponse donnée</p>
+      <p className="mt-1 whitespace-pre-wrap">{text.trim() ? text : <span className="text-muted-foreground italic">Sans réponse</span>}</p>
     </div>
   );
 }

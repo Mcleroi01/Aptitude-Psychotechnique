@@ -143,9 +143,19 @@ export async function getAttemptView(attemptId: string, userId: string): Promise
 
 export type AttemptResult = Awaited<ReturnType<typeof getAttemptResult>>;
 
+/** Résultats vus par le candidat, selon la visibilité choisie par l'organisation. */
 export async function getAttemptResult(attemptId: string, userId: string) {
   const attempt = await getAttemptState(attemptId, userId);
-  const access: ResultAccess = resultAccess(attempt.campaign);
+  return buildResult(attempt, resultAccess(attempt.campaign));
+}
+
+/** Résultats complets d'une tentative, pour une tentative déjà chargée et autorisée. */
+export async function buildFullResult(attempt: LoadedAttempt) {
+  return buildResult(attempt, "full");
+}
+
+async function buildResult(attempt: LoadedAttempt, access: ResultAccess) {
+  const attemptId = attempt.id;
   const base = {
     id: attempt.id,
     mode: attempt.mode,
@@ -203,6 +213,9 @@ export async function getAttemptResult(attemptId: string, userId: string) {
               points: a.points,
               timeSpentMs: a.timeSpentMs,
               feedback: a.feedback,
+              needsManualReview: a.needsManualReview,
+              manualScore: a.manualScore,
+              autoScore: a.autoScore,
               response: (a.response as QuestionResponse | null) ?? null,
               question: toCandidateQuestion(a.question, await media(a.question)),
               correction: buildCorrection(a.question, { status: storedGradeStatus({ ...a, score }), score }),
