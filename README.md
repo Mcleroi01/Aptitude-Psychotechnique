@@ -10,7 +10,8 @@ Le moteur est **générique** : aucun nombre de questions, aucune durée ni aucu
 au thème BCC sont une collection pédagogique parmi d'autres ; la plateforme n'est ni affiliée, ni approuvée, ni gérée
 par la Banque Centrale du Congo.
 
-> État : phases 1 à 3 terminées (architecture, interface publique, comptes et organisations).
+> État : phases 1 à 4 terminées (architecture, interface publique, comptes et organisations, banques et éditeur de
+> questions).
 
 ## Modèle
 
@@ -76,7 +77,8 @@ Prérequis : Node.js ≥ 20.19 (testé avec Node 24) et un projet [Supabase](htt
 npm install                 # installe et génère le client Prisma
 cp .env.example .env        # puis renseigner les valeurs
 npm run db:deploy           # crée les tables (migrations existantes)
-npm run db:seed             # catégories, évaluation d'exemple, super-administrateur
+npm run db:seed             # catégories, 41 questions originales, évaluation d'exemple, super-administrateur
+npm run storage:setup       # buckets Supabase Storage privés
 npm run dev                 # http://localhost:3000
 ```
 
@@ -87,7 +89,9 @@ npm run dev                 # http://localhost:3000
    `?pgbouncer=true`, et la chaîne *Session pooler* ou *Direct* (port 5432) dans `DIRECT_URL`.
 3. **Project Settings → API** : copier l'URL dans `NEXT_PUBLIC_SUPABASE_URL` et la clé `service_role` dans
    `SUPABASE_SERVICE_ROLE_KEY`.
-4. **Storage** : la création des buckets `documents` (privé) et `question-images` (public) est décrite en phase 7.
+4. **Storage** : `npm run storage:setup` crée les buckets privés `question-images` (2 Mo, images) et `documents`
+   (10 Mo, PDF et images). Les fichiers sont envoyés directement du navigateur vers Supabase par URL signée à usage
+   unique, et lus uniquement par URL signée temporaire.
 
 ## Variables d'environnement
 
@@ -115,6 +119,7 @@ npm run dev                 # http://localhost:3000
 | `npm run db:deploy` | Applique les migrations existantes (production) |
 | `npm run db:seed` | Données initiales (idempotent) |
 | `npm run db:studio` | Explorateur de base Prisma |
+| `npm run storage:setup` | Crée ou met à jour les buckets Supabase Storage (idempotent) |
 
 ## Déploiement sur Vercel
 

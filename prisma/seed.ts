@@ -2,13 +2,14 @@
  * Données initiales : catégories de la banque Aptitude, modèle d'évaluation
  * d'exemple et compte super-administrateur (si SEED_ADMIN_EMAIL /
  * SEED_ADMIN_PASSWORD sont définis). Idempotent : peut être relancé sans doublons.
- * Les questions de la banque Aptitude sont ajoutées en phase 4.
+ * Les questions de la banque Aptitude sont des contenus originaux (seed-data/questions.ts).
  */
 import "dotenv/config";
 import bcrypt from "bcryptjs";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../generated/prisma/client";
 import { categories } from "../lib/content/categories";
+import { seedQuestions, toSeedQuestionData } from "./seed-data/questions";
 
 const connectionString = process.env.DIRECT_URL ?? process.env.DATABASE_URL;
 if (!connectionString) throw new Error("DIRECT_URL ou DATABASE_URL doit être défini.");
@@ -30,6 +31,37 @@ async function seedCategories() {
   console.log(`✔ ${categories.length} catégories (banque Aptitude)`);
 }
 
+/** Ajoute les questions absentes ; une question déjà présente (même énoncé) n'est jamais écrasée. */
+async function seedQuestionBank() {
+  const categoryIds = new Map(
+    (await prisma.category.findMany({ where: { organizationId: null }, select: { id: true, slug: true } })).map((c) => [
+      c.slug,
+      c.id,
+    ]),
+  );
+  let created = 0;
+  for (const question of seedQuestions) {
+    const exists = await prisma.question.findFirst({
+      where: { organizationId: null, prompt: question.prompt },
+      select: { id: true },
+    });
+    if (exists) continue;
+    const { options, answerKey, ...data } = toSeedQuestionData(question);
+    await prisma.question.create({
+      data: {
+        ...data,
+        answerKey,
+        organizationId: null,
+        categoryId: categoryIds.get(question.category) ?? null,
+        status: "PUBLISHED",
+        options: { create: options },
+      },
+    });
+    created++;
+  }
+  console.log(`✔ Banque Aptitude : ${created} question(s) ajoutée(s), ${seedQuestions.length - created} déjà présente(s)`);
+}
+
 /**
  * Exemple de configuration, pas une règle : 15 questions tirées au hasard en
  * 15 minutes. Tout est modifiable ou supprimable depuis l'administration.
@@ -45,13 +77,15 @@ async function seedExampleAssessment() {
     console.log("• Évaluation d'exemple déjà présente");
     return;
   }
+  // Publiable seulement si la banque contient assez de questions pour le tirage.
+  const available = await prisma.question.count({ where: { organizationId: null, status: "PUBLISHED", isLatest: true } });
   await prisma.assessment.create({
     data: {
       title: EXAMPLE_ASSESSMENT_TITLE,
       description: "Questions de raisonnement numérique tirées dans toutes les catégories de la banque Aptitude.",
       timingMode: "GLOBAL",
       durationSeconds: 15 * 60,
-      status: "DRAFT", // publiée en phase 4, une fois la banque de questions remplie
+      status: available >= 15 ? "PUBLISHED" : "DRAFT",
       sections: {
         create: {
           order: 0,
@@ -63,7 +97,7 @@ async function seedExampleAssessment() {
       },
     },
   });
-  console.log("✔ Évaluation d'exemple (brouillon)");
+  console.log(`✔ Évaluation d'exemple (${available >= 15 ? "publiée" : "brouillon : banque insuffisante"})`);
 }
 
 async function seedSuperAdmin() {
@@ -99,6 +133,7 @@ async function seedSuperAdmin() {
 
 async function main() {
   await seedCategories();
+  await seedQuestionBank();
   await seedExampleAssessment();
   await seedSuperAdmin();
 }

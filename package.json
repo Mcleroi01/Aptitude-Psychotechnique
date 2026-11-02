@@ -15,7 +15,8 @@
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
-    "vercel-build": "prisma generate && prisma migrate deploy && next build"
+    "vercel-build": "prisma generate && prisma migrate deploy && next build",
+    "storage:setup": "tsx scripts/setup-storage.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^7.0.1",

@@ -5,7 +5,6 @@ import { orgRoleLabels } from "@/lib/permissions";
 export const metadata: Metadata = { title: "Espace organisation" };
 
 const roadmap = [
-  { title: "Banque de questions", text: "Six formats de questions, aperçu et correction automatique." },
   { title: "Évaluations", text: "Une ou plusieurs épreuves, avec durées, barèmes et seuils propres." },
   { title: "Campagnes", text: "Publication, invitations des candidats et suivi des passages." },
   { title: "Résultats", text: "Scores par épreuve et par catégorie, correction manuelle, rapports." },
@@ -20,8 +19,8 @@ export default async function OrganisationPage({ params }: PageProps<"/organisat
       <p className="text-sm font-medium text-muted-foreground">Espace organisation · {orgRoleLabels[role]}</p>
       <h1 className="mt-2 text-3xl font-semibold">{organization.name}</h1>
       <p className="mt-3 max-w-2xl text-muted-foreground">
-        Votre espace est créé. Les outils de création de questionnaires et de campagnes sont en cours de
-        développement et apparaîtront dans le menu au fur et à mesure.
+        La banque de questions est disponible dans le menu. Les évaluations, les campagnes et les résultats sont en
+        cours de développement et apparaîtront au fur et à mesure.
       </p>
 
       <section className="mt-10 rounded-xl border bg-card">

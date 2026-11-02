@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { AppShell } from "@/components/layout/app-shell";
 import { requireSuperAdmin } from "@/lib/guards";
 import { prisma } from "@/lib/prisma";
 
@@ -9,7 +8,7 @@ export const metadata: Metadata = { title: "Administration" };
 
 // Vue en lecture seule ; la gestion (suspension, comptes, contenus) arrive en phase 10.
 export default async function AdminPage() {
-  const user = await requireSuperAdmin();
+  await requireSuperAdmin();
   const [userCount, organizationCount, organizations] = await Promise.all([
     prisma.user.count(),
     prisma.organization.count(),
@@ -21,7 +20,7 @@ export default async function AdminPage() {
   ]);
 
   return (
-    <AppShell user={user} context="Administration">
+    <>
       <h1 className="text-3xl font-semibold">Administration</h1>
       <dl className="mt-8 grid gap-4 sm:grid-cols-2 lg:max-w-xl">
         <div className="rounded-xl border bg-card p-5">
@@ -66,6 +65,6 @@ export default async function AdminPage() {
           </table>
         </div>
       )}
-    </AppShell>
+    </>
   );
 }

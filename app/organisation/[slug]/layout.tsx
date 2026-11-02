@@ -10,6 +10,12 @@ export default async function OrganisationLayout({ children, params }: LayoutPro
   // Seules les sections livrées figurent ici ; les suivantes s'ajoutent phase par phase.
   const nav = [
     { href: base, label: "Vue d'ensemble", exact: true },
+    ...(can(role, "questions:write")
+      ? [
+          { href: `${base}/questions`, label: "Banque de questions" },
+          { href: `${base}/categories`, label: "Catégories" },
+        ]
+      : []),
     ...(can(role, "members:manage") ? [{ href: `${base}/membres`, label: "Membres" }] : []),
   ];
 

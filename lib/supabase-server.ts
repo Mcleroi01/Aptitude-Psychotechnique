@@ -6,7 +6,10 @@ import { AppError } from "@/lib/errors";
 export const STORAGE_BUCKETS = {
   /** Privé : accès uniquement par URL signée générée côté serveur. */
   documents: "documents",
-  /** Public : illustrations des questions (aucune donnée sensible). */
+  /**
+   * Privé : illustrations des questions. Une image peut révéler le contenu
+   * d'une épreuve confidentielle, elle n'est donc servie que par URL signée.
+   */
   questionImages: "question-images",
 } as const;
 
