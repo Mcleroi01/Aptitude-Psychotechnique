@@ -10,8 +10,9 @@ Le moteur est **générique** : aucun nombre de questions, aucune durée ni aucu
 au thème BCC sont une collection pédagogique parmi d'autres ; la plateforme n'est ni affiliée, ni approuvée, ni gérée
 par la Banque Centrale du Congo.
 
-> État : phases 1 à 4 terminées (architecture, interface publique, comptes et organisations, banques et éditeur de
-> questions).
+> État : phases 1 à 5 terminées (architecture, interface publique, comptes et organisations, banques et éditeur de
+> questions, évaluations et campagnes). Une évaluation utilisée par une campagne publiée est figée : on la duplique
+> pour créer une variante.
 
 ## Modèle
 

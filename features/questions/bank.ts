@@ -19,5 +19,8 @@ export function bankPaths(ref: BankRef) {
     newQuestion: `${root}/questions/nouvelle`,
     question: (id: string) => `${root}/questions/${id}`,
     categories: `${root}/categories`,
+    assessments: `${root}/evaluations`,
+    assessment: (id: string) => `${root}/evaluations/${id}`,
+    assessmentPreview: (id: string) => `${root}/evaluations/${id}/apercu`,
   };
 }
