@@ -7,7 +7,7 @@ import { MobileNav } from "@/components/layout/mobile-nav";
 
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-40 bg-ink text-white">
+    <header className="sticky top-0 z-40 border-b border-white/10 bg-ink text-white">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-8">
           <Logo inverted />
@@ -21,8 +21,8 @@ export function SiteHeader() {
             Connexion
           </Link>
           <Button asChild variant="sky" size="lg" className="hidden px-3.5 sm:inline-flex">
-            <Link href="/inscription">
-              Commencer <ArrowRight data-icon="inline-end" />
+            <Link href="/entrainement">
+              S&apos;entraîner <ArrowRight data-icon="inline-end" />
             </Link>
           </Button>
           <MobileNav />

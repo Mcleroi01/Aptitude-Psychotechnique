@@ -90,15 +90,26 @@ export function PageHero({
   children?: ReactNode;
 }) {
   return (
-    <section className="bg-ink text-white">
-      <Container className="py-20 text-center sm:py-24">
-        <Eyebrow inverted>Psychotechnique · {eyebrow}</Eyebrow>
-        <h1 className="mx-auto mt-5 max-w-3xl text-4xl font-semibold text-balance sm:text-5xl sm:leading-[1.08]">
+    <section className="relative isolate overflow-hidden bg-ink text-white">
+      {/* Fond en incrustation : halo et grille estompée */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
+        <div className="absolute -top-32 left-1/2 size-[36rem] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,oklch(0.78_0.1_238/0.20),transparent)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgb(255_255_255/0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgb(255_255_255/0.06)_1px,transparent_1px)] bg-[size:56px_56px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,transparent_15%,var(--ink)_70%)]" />
+      </div>
+      <Container className="py-20 text-center sm:py-28">
+        <div data-reveal>
+          <Eyebrow inverted>{eyebrow}</Eyebrow>
+        </div>
+        <h1 data-reveal className="mx-auto mt-5 max-w-3xl text-4xl font-semibold text-balance sm:text-5xl sm:leading-[1.08]">
           {title}
         </h1>
-        <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-white/65 text-pretty">{description}</p>
+        <p data-reveal className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-white/65 text-pretty">
+          {description}
+        </p>
         {children}
       </Container>
+      <div className="h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
     </section>
   );
 }

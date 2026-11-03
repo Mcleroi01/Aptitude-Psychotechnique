@@ -23,6 +23,22 @@ indépendante : elle n'est affiliée à aucun employeur ni organisme de recrutem
 - Aucune clé de correction n'est envoyée au navigateur pendant une tentative, sauf la correction d'une question
   vérifiée en mode entraînement.
 
+## Accès sans compte et connexion par e-mail
+
+- **Entraînement et examens blancs sans compte** (`/entrainement`) : le visiteur est identifié par un jeton aléatoire
+  en cookie httpOnly (`aptitude_invite`), dont seul le hachage est stocké. Ses séries sont rattachées à son compte dès
+  qu'il se connecte ou s'inscrit ; celles jamais rattachées sont supprimées après 30 jours. Les campagnes de recrutement
+  exigent un compte.
+- **Lien de connexion par e-mail** : connecte un compte existant ou le crée au premier clic (15 minutes, usage unique,
+  consommé au clic pour résister aux antivirus de messagerie). La réponse ne révèle pas si l'adresse a un compte.
+
+## Animations
+
+GSAP (`gsap`, `@gsap/react`) pour le héros, les apparitions au défilement (attributs `data-reveal`, `data-stagger`,
+`data-parallax`, `data-count`, `data-cascade`), le bandeau défilant et les cadres lumineux. Désactivées si le système
+demande de réduire les animations. Les fonds animés évitent `backdrop-filter` et les grands masques CSS, coûteux à
+l'affichage.
+
 ## Correction et rapports
 
 - **File de correction** anonyme (code de copie) pour les rôles `OWNER`, `ADMIN` et `GRADER` ; toute note, y compris
