@@ -28,6 +28,14 @@ const passwordsMatch = {
   params: { path: ["confirmPassword"], message: "Les mots de passe ne correspondent pas" },
 };
 
+/** Demande de lien de connexion ; le nom n'est utile qu'à la création de compte. */
+export const emailLinkSchema = z.object({
+  email: emailSchema,
+  name: z.string().trim().max(80, "Nom trop long").optional(),
+});
+
+export type EmailLinkInput = z.infer<typeof emailLinkSchema>;
+
 export const organizationNameSchema = z
   .string()
   .trim()

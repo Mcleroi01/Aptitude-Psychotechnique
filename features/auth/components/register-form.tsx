@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
@@ -97,17 +96,6 @@ export function RegisterForm() {
       <p className="text-center text-xs leading-relaxed text-muted-foreground">
         En créant un compte, vous reconnaissez que cette plateforme est indépendante et n&apos;est affiliée à aucun
         recruteur.
-      </p>
-      <p className="text-center text-sm text-muted-foreground">
-        Vous recrutez ?{" "}
-        <Link href="/entreprise/inscription" className="font-semibold text-primary underline-offset-4 hover:underline">
-          Créer un espace entreprise
-        </Link>
-        <br />
-        Déjà inscrit ?{" "}
-        <Link href="/connexion" className="font-semibold text-primary underline-offset-4 hover:underline">
-          Se connecter
-        </Link>
       </p>
     </form>
   );

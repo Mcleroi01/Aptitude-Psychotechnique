@@ -28,7 +28,7 @@ export const authConfig = {
         return user.platformRole === "SUPER_ADMIN" ? true : Response.redirect(new URL("/espace", request.nextUrl));
       }
       // L'appartenance à l'organisation est vérifiée côté serveur (requireOrgMember).
-      if (pathname.startsWith("/espace") || pathname.startsWith("/organisation") || pathname.startsWith("/tentative")) {
+      if (pathname.startsWith("/espace") || pathname.startsWith("/organisation")) {
         return Boolean(user);
       }
       return true;

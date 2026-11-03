@@ -7,7 +7,8 @@ import { signIn, signOut } from "@/lib/auth";
 import { AppError, runAction, type ActionResult } from "@/lib/errors";
 import { assertUser } from "@/lib/guards";
 import { safeCallbackUrl } from "@/lib/redirects";
-import { companyRegisterSchema, createOrganizationSchema, loginSchema, registerSchema } from "@/schemas/auth";
+import { companyRegisterSchema, createOrganizationSchema, emailLinkSchema, loginSchema, registerSchema } from "@/schemas/auth";
+import { requestLoginLink } from "@/services/email-login.service";
 import { sendVerificationEmail, verifyEmail } from "@/services/email-verification.service";
 import { createOrganization } from "@/services/organization.service";
 import { clientIpFrom, isRegistrationBlocked, recordRegistration } from "@/services/rate-limit.service";
@@ -20,6 +21,9 @@ function toAuthAppError(error: unknown): AppError | undefined {
         "RATE_LIMITED",
         "Trop de tentatives de connexion. Patientez 15 minutes avant de réessayer.",
       );
+    }
+    if (error.code === "invalid_link") {
+      return new AppError("UNAUTHORIZED", "Ce lien est invalide, expiré ou déjà utilisé. Demandez-en un nouveau.");
     }
     return new AppError("UNAUTHORIZED", "Adresse e-mail ou mot de passe incorrect.");
   }
@@ -113,6 +117,26 @@ export async function verifyEmailAction(token: unknown): Promise<ActionResult> {
     }
     if (!(await verifyEmail(token))) {
       throw new AppError("VALIDATION", "Ce lien est invalide, déjà utilisé ou expiré. Demandez-en un nouveau.");
+    }
+  });
+}
+
+/** Envoie un lien de connexion (ou de création de compte) à l'adresse indiquée. */
+export async function requestLoginLinkAction(input: unknown, callbackUrl?: string): Promise<ActionResult> {
+  return runAction(async () => {
+    const { email, name } = emailLinkSchema.parse(input);
+    const ip = clientIpFrom(await headers());
+    await requestLoginLink({ email, name, callbackUrl, ip });
+  });
+}
+
+/** Le lien n'est consommé qu'au clic : les antivirus qui ouvrent les liens ne connectent personne. */
+export async function confirmLoginLinkAction(token: unknown, callbackUrl?: string): Promise<ActionResult> {
+  return runAction(async () => {
+    try {
+      await signIn("email-link", { token: typeof token === "string" ? token : "", redirectTo: safeCallbackUrl(callbackUrl) });
+    } catch (error) {
+      throw toAuthAppError(error) ?? error;
     }
   });
 }

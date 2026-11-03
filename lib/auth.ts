@@ -5,6 +5,9 @@ import Credentials from "next-auth/providers/credentials";
 import { authConfig } from "@/auth.config";
 import { prisma } from "@/lib/prisma";
 import { loginSchema } from "@/schemas/auth";
+import { currentGuestId } from "@/lib/guest-cookie";
+import { claimGuestAttempts } from "@/services/attempt.service";
+import { consumeLoginLink } from "@/services/email-login.service";
 import { clientIpFrom, isLoginBlocked, recordLoginAttempt } from "@/services/rate-limit.service";
 
 /** Délai entre deux revérifications du compte (rôle, activation) dans le JWT. */
@@ -20,6 +23,29 @@ class RateLimitedError extends CredentialsSignin {
 class InvalidCredentialsError extends CredentialsSignin {
   code = "invalid_credentials";
 }
+
+class InvalidLinkError extends CredentialsSignin {
+  code = "invalid_link";
+}
+
+/** Après toute connexion : date de connexion et rattachement des séries faites sans compte. */
+async function afterSignIn(userId: string) {
+  await prisma.user.update({ where: { id: userId }, data: { lastLoginAt: new Date() } });
+  try {
+    const guestId = await currentGuestId();
+    if (guestId) await claimGuestAttempts(guestId, userId);
+  } catch (error) {
+    // Le rattachement ne doit jamais empêcher la connexion.
+    console.error("[auth] rattachement des tentatives invitées", error);
+  }
+}
+
+const toSessionUser = (user: { id: string; name: string; email: string; platformRole: "SUPER_ADMIN" | "USER" }) => ({
+  id: user.id,
+  name: user.name,
+  email: user.email,
+  platformRole: user.platformRole,
+});
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
@@ -47,17 +73,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           throw new InvalidCredentialsError();
         }
 
-        await Promise.all([
-          recordLoginAttempt(email, ip, true),
-          prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } }),
-        ]);
-
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          platformRole: user.platformRole,
-        };
+        await recordLoginAttempt(email, ip, true);
+        await afterSignIn(user.id);
+        return toSessionUser(user);
+      },
+    }),
+    // Lien de connexion reçu par e-mail (connexion ou création de compte).
+    Credentials({
+      id: "email-link",
+      credentials: { token: { type: "text" } },
+      async authorize(credentials) {
+        const token = typeof credentials?.token === "string" ? credentials.token : "";
+        if (!/^[A-Za-z0-9_-]{30,60}$/.test(token)) throw new InvalidLinkError();
+        const user = await consumeLoginLink(token);
+        if (!user) throw new InvalidLinkError();
+        await afterSignIn(user.id);
+        return toSessionUser(user);
       },
     }),
   ],

@@ -1,5 +1,5 @@
 import { timingSafeEqual } from "node:crypto";
-import { expireOverdueAttempts } from "@/services/attempt.service";
+import { expireOverdueAttempts, purgeStaleGuestAttempts } from "@/services/attempt.service";
 
 /**
  * Clôture des tentatives abandonnées (appelée par Vercel Cron, voir vercel.json).
@@ -15,5 +15,6 @@ export async function GET(request: Request) {
   if (!authorized) return Response.json({ error: "Non autorisé" }, { status: 401 });
 
   const expired = await expireOverdueAttempts();
-  return Response.json({ expired });
+  const purgedGuestAttempts = await purgeStaleGuestAttempts();
+  return Response.json({ expired, purgedGuestAttempts });
 }

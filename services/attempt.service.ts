@@ -10,6 +10,7 @@ import { responseSchemas } from "@/lib/questions/answer-key";
 import { buildCorrection, type Correction } from "@/lib/questions/correction";
 import { gradeResponse } from "@/lib/questions/grading";
 import { drawSectionQuestions, shuffle } from "@/services/assessment.service";
+import { ownerWhere, type AttemptOwner } from "@/lib/attempt-owner";
 
 /**
  * Moteur de tentative. Toutes les décisions liées au temps sont prises ici,
@@ -60,7 +61,7 @@ const gradingSelect = {
 type Pick = { questionId: string; points: number; negativePoints: number };
 
 async function createAttempt(data: {
-  userId: string;
+  owner: AttemptOwner;
   mode: "PRACTICE" | "CAMPAIGN";
   assessmentId?: string;
   campaignId?: string;
@@ -74,7 +75,7 @@ async function createAttempt(data: {
   return prisma.$transaction(async (tx) => {
     const attempt = await tx.assessmentAttempt.create({
       data: {
-        userId: data.userId,
+        ...ownerWhere(data.owner),
         mode: data.mode,
         assessmentId: data.assessmentId,
         campaignId: data.campaignId,
@@ -146,7 +147,7 @@ async function buildSections(assessmentId: string, organizationId: string | null
 }
 
 async function startFromAssessment(
-  userId: string,
+  owner: AttemptOwner,
   assessment: { id: string; organizationId: string | null; timingMode: string; durationSeconds: number | null },
   campaign: { id: string; closesAt: Date | null } | null,
   invitationId?: string,
@@ -158,7 +159,7 @@ async function startFromAssessment(
     campaign?.closesAt ?? null,
   );
   return createAttempt({
-    userId,
+    owner,
     mode: "CAMPAIGN",
     assessmentId: assessment.id,
     campaignId: campaign?.id,
@@ -170,17 +171,17 @@ async function startFromAssessment(
 }
 
 /** Examen blanc de la plateforme : tentatives illimitées, une seule en cours à la fois. */
-export async function startPlatformExam(userId: string, assessmentId: string) {
+export async function startPlatformExam(owner: AttemptOwner, assessmentId: string) {
   const assessment = await prisma.assessment.findFirst({
     where: { id: assessmentId, organizationId: null, status: "PUBLISHED" },
     select: { id: true, organizationId: true, timingMode: true, durationSeconds: true },
   });
   if (!assessment) throw new AppError("NOT_FOUND", "Examen introuvable.");
   const ongoing = await prisma.assessmentAttempt.findFirst({
-    where: { userId, assessmentId, campaignId: null, status: "IN_PROGRESS" },
+    where: { ...ownerWhere(owner), assessmentId, campaignId: null, status: "IN_PROGRESS" },
     select: { id: true },
   });
-  return ongoing ?? startFromAssessment(userId, assessment, null);
+  return ongoing ?? startFromAssessment(owner, assessment, null);
 }
 
 /** Campagne : vérifie période, accès, statut de l'organisation et nombre de tentatives. */
@@ -225,12 +226,12 @@ export async function startCampaignAttempt(user: { id: string; email: string }, 
   if (used >= campaign.maxAttempts) {
     throw new AppError("FORBIDDEN", "Vous avez utilisé toutes les tentatives autorisées pour cette campagne.");
   }
-  return startFromAssessment(user.id, campaign.assessment, campaign, invitationId);
+  return startFromAssessment({ userId: user.id }, campaign.assessment, campaign, invitationId);
 }
 
 /** Entraînement libre sur la banque Aptitude, avec correction question par question. */
 export async function startPractice(
-  userId: string,
+  owner: AttemptOwner,
   options: { categoryId: string | null; difficulty: Difficulty | null; count: number },
 ) {
   const category = options.categoryId
@@ -256,7 +257,7 @@ export async function startPractice(
     .slice(0, options.count)
     .map((q) => ({ questionId: q.id, points: q.defaultPoints, negativePoints: 0 }));
   return createAttempt({
-    userId,
+    owner,
     mode: "PRACTICE",
     categoryId: category?.id,
     difficulty: options.difficulty,
@@ -267,9 +268,9 @@ export async function startPractice(
 
 // ─── Lecture et clôture paresseuse ───────────────────────────────────────────
 
-async function loadAttempt(attemptId: string, userId?: string) {
+async function loadAttempt(attemptId: string, owner?: AttemptOwner) {
   const attempt = await prisma.assessmentAttempt.findFirst({
-    where: { id: attemptId, ...(userId && { userId }) },
+    where: { id: attemptId, ...(owner && ownerWhere(owner)) },
     include: attemptInclude,
   });
   if (!attempt) throw new AppError("NOT_FOUND", "Tentative introuvable.");
@@ -292,8 +293,8 @@ export function currentDeadline(attempt: LoadedAttempt): Date | null {
  * Applique les échéances dépassées : clôture l'épreuve (ou la tentative)
  * dont le temps est écoulé. Idempotent et sûr en cas d'appels simultanés.
  */
-export async function getAttemptState(attemptId: string, userId?: string): Promise<LoadedAttempt> {
-  let attempt = await loadAttempt(attemptId, userId);
+export async function getAttemptState(attemptId: string, owner?: AttemptOwner): Promise<LoadedAttempt> {
+  let attempt = await loadAttempt(attemptId, owner);
   for (let guard = 0; guard < attempt.sections.length + 1 && attempt.status === "IN_PROGRESS"; guard++) {
     const now = new Date();
     const campaign = attempt.campaign;
@@ -307,7 +308,7 @@ export async function getAttemptState(attemptId: string, userId?: string): Promi
       if (!(section?.status === "IN_PROGRESS" && isPast(section.deadlineAt, now))) break;
       await completeSection(attempt.id, section.id, now);
     }
-    attempt = await loadAttempt(attemptId, userId);
+    attempt = await loadAttempt(attemptId, owner);
   }
   return attempt;
 }
@@ -452,8 +453,8 @@ function assertInProgress(attempt: LoadedAttempt) {
   }
 }
 
-export async function startCurrentSection(attemptId: string, userId: string) {
-  const attempt = await getAttemptState(attemptId, userId);
+export async function startCurrentSection(attemptId: string, owner: AttemptOwner) {
+  const attempt = await getAttemptState(attemptId, owner);
   assertInProgress(attempt);
   const section = currentSection(attempt);
   if (!section || section.status !== "NOT_STARTED") return;
@@ -468,10 +469,10 @@ export async function startCurrentSection(attemptId: string, userId: string) {
 
 export async function saveAnswer(
   attemptId: string,
-  userId: string,
+  owner: AttemptOwner,
   input: { answerId: string; response: unknown; flagged: boolean; timeSpentMs: number },
 ) {
-  const attempt = await getAttemptState(attemptId, userId);
+  const attempt = await getAttemptState(attemptId, owner);
   assertInProgress(attempt);
   const section = currentSection(attempt);
   if (!section || section.status !== "IN_PROGRESS") throw new AppError("CONFLICT", "Aucune épreuve en cours.");
@@ -511,8 +512,8 @@ export async function saveAnswer(
   });
 }
 
-export async function submitCurrentSection(attemptId: string, userId: string) {
-  const attempt = await getAttemptState(attemptId, userId);
+export async function submitCurrentSection(attemptId: string, owner: AttemptOwner) {
+  const attempt = await getAttemptState(attemptId, owner);
   if (attempt.status !== "IN_PROGRESS") return;
   const section = currentSection(attempt);
   if (!section || section.status !== "IN_PROGRESS") throw new AppError("CONFLICT", "Aucune épreuve en cours.");
@@ -520,8 +521,8 @@ export async function submitCurrentSection(attemptId: string, userId: string) {
 }
 
 /** Entraînement : corrige immédiatement une question et renvoie la correction. */
-export async function checkPracticeAnswer(attemptId: string, userId: string, answerId: string): Promise<Correction> {
-  const attempt = await getAttemptState(attemptId, userId);
+export async function checkPracticeAnswer(attemptId: string, owner: AttemptOwner, answerId: string): Promise<Correction> {
+  const attempt = await getAttemptState(attemptId, owner);
   assertInProgress(attempt);
   if (attempt.mode !== "PRACTICE") throw new AppError("FORBIDDEN", "La correction immédiate n'existe qu'en entraînement.");
 
@@ -567,4 +568,23 @@ export async function expireOverdueAttempts(limit = 200): Promise<number> {
   });
   for (const { id } of overdue) await getAttemptState(id);
   return overdue.length;
+}
+
+// ─── Visiteurs sans compte ───────────────────────────────────────────────────
+
+/** Rattache au compte les tentatives faites sans compte depuis ce navigateur. */
+export async function claimGuestAttempts(guestId: string, userId: string): Promise<number> {
+  const { count } = await prisma.assessmentAttempt.updateMany({
+    where: { guestId, userId: null },
+    data: { userId, guestId: null },
+  });
+  return count;
+}
+
+/** Supprime les tentatives sans compte, jamais rattachées, de plus de 30 jours. */
+export async function purgeStaleGuestAttempts(): Promise<number> {
+  const { count } = await prisma.assessmentAttempt.deleteMany({
+    where: { userId: null, startedAt: { lt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } },
+  });
+  return count;
 }

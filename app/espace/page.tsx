@@ -24,7 +24,7 @@ export default async function EspacePage() {
       <h1 className="mt-2 text-3xl font-semibold">Bonjour {user.name}</h1>
       <div className="mt-5">
         <Button asChild size="lg">
-          <Link href="/espace/entrainement">
+          <Link href="/entrainement">
             S&apos;entraîner <ArrowRight data-icon="inline-end" />
           </Link>
         </Button>

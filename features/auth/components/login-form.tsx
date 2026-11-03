@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
@@ -64,12 +63,6 @@ export function LoginForm({ callbackUrl }: { callbackUrl?: string }) {
         {pending && <Loader2 className="animate-spin" data-icon="inline-start" />}
         Se connecter
       </Button>
-      <p className="text-center text-sm text-muted-foreground">
-        Pas encore de compte ?{" "}
-        <Link href="/inscription" className="font-semibold text-primary underline-offset-4 hover:underline">
-          Créer un compte
-        </Link>
-      </p>
     </form>
   );
 }

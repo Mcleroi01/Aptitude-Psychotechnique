@@ -8,6 +8,7 @@ import { buildCorrection, storedGradeStatus, type Correction } from "@/lib/quest
 import { toCandidateQuestion, type CandidateQuestion } from "@/lib/questions/public";
 import { currentDeadline, getAttemptState, type LoadedAttempt } from "@/services/attempt.service";
 import { signedReadUrl } from "@/services/storage.service";
+import type { AttemptOwner } from "@/lib/attempt-owner";
 
 /**
  * Données envoyées au navigateur. Règle absolue : aucune clé de correction,
@@ -72,8 +73,8 @@ function attemptTitle(attempt: LoadedAttempt) {
   return attempt.campaign?.title ?? attempt.assessment?.title ?? attempt.sections[0]?.title ?? "Entraînement";
 }
 
-export async function getAttemptView(attemptId: string, userId: string): Promise<AttemptView> {
-  const attempt = await getAttemptState(attemptId, userId);
+export async function getAttemptView(attemptId: string, owner: AttemptOwner): Promise<AttemptView> {
+  const attempt = await getAttemptState(attemptId, owner);
   const current = attempt.sections.find((s) => s.id === attempt.currentSectionId) ?? null;
   const showItems = attempt.status === "IN_PROGRESS" && current?.status === "IN_PROGRESS";
 
@@ -144,8 +145,8 @@ export async function getAttemptView(attemptId: string, userId: string): Promise
 export type AttemptResult = Awaited<ReturnType<typeof getAttemptResult>>;
 
 /** Résultats vus par le candidat, selon la visibilité choisie par l'organisation. */
-export async function getAttemptResult(attemptId: string, userId: string) {
-  const attempt = await getAttemptState(attemptId, userId);
+export async function getAttemptResult(attemptId: string, owner: AttemptOwner) {
+  const attempt = await getAttemptState(attemptId, owner);
   return buildResult(attempt, resultAccess(attempt.campaign));
 }
 
@@ -168,6 +169,8 @@ async function buildResult(attempt: LoadedAttempt, access: ResultAccess) {
     campaignId: attempt.campaignId,
     assessmentId: attempt.assessmentId,
     access,
+    /** Tentative faite sans compte : le candidat peut la conserver en créant un compte */
+    guest: attempt.userId === null,
   };
   if (attempt.status === "IN_PROGRESS" || access === "none") return { ...base, summary: null, sections: [], categories: [], items: [] };
 

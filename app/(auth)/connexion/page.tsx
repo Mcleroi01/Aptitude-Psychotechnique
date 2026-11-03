@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { AuthMethodTabs } from "@/features/auth/components/auth-method-tabs";
+import { EmailLinkForm } from "@/features/auth/components/email-link-form";
 import { LoginForm } from "@/features/auth/components/login-form";
 import { safeCallbackUrl } from "@/lib/redirects";
 
@@ -11,10 +14,26 @@ export default async function ConnexionPage({ searchParams }: PageProps<"/connex
   return (
     <>
       <h1 className="text-3xl font-semibold">Bon retour !</h1>
-      <p className="mt-2 text-muted-foreground">Connectez-vous pour reprendre votre préparation.</p>
+      <p className="mt-2 text-muted-foreground">
+        Recevez un lien de connexion par e-mail, ou utilisez votre mot de passe. Sans compte, le lien en crée un.
+      </p>
       <div className="mt-8">
-        <LoginForm callbackUrl={target} />
+        <AuthMethodTabs
+          emailLink={<EmailLinkForm mode="login" callbackUrl={target} />}
+          password={<LoginForm callbackUrl={target} />}
+        />
       </div>
+      <p className="mt-8 text-center text-sm leading-relaxed text-muted-foreground">
+        Pas encore de compte ?{" "}
+        <Link href="/inscription" className="font-semibold text-primary underline-offset-4 hover:underline">
+          Créer un compte
+        </Link>
+        <br />
+        Envie de vous entraîner d&apos;abord ?{" "}
+        <Link href="/entrainement" className="font-semibold text-primary underline-offset-4 hover:underline">
+          S&apos;entraîner sans compte
+        </Link>
+      </p>
     </>
   );
 }
