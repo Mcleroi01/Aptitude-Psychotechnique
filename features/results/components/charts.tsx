@@ -53,6 +53,41 @@ export function ScoreDistribution({ buckets }: { buckets: number[] }) {
   );
 }
 
+/** Progression : une barre par tentative (de la plus ancienne à la plus récente). */
+export function ProgressBars({ points }: { points: { id: string; percent: number; label: string; date: string }[] }) {
+  if (points.length === 0) return <p className="text-sm text-muted-foreground">Pas encore de tentative terminée.</p>;
+  return (
+    <figure>
+      <div className="flex h-36 items-end gap-[2px] border-b" aria-hidden>
+        {points.map((p) => (
+          <div key={p.id} className="group relative flex h-full flex-1 items-end">
+            <div className="w-full rounded-t-[4px] bg-primary transition-opacity group-hover:opacity-80" style={{ height: `${Math.max(p.percent, 1)}%` }} />
+            <span className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 hidden -translate-x-1/2 rounded-md border bg-popover px-2 py-1 text-xs whitespace-nowrap shadow-sm group-hover:block">
+              {p.label} · {p.date} : <strong className="tabular">{fmt(p.percent)} %</strong>
+            </span>
+          </div>
+        ))}
+      </div>
+      <div className="mt-1.5 flex justify-between text-xs text-muted-foreground" aria-hidden>
+        <span>Plus ancienne</span>
+        <span>Plus récente</span>
+      </div>
+      <table className="sr-only">
+        <caption>Scores des dernières tentatives</caption>
+        <tbody>
+          {points.map((p) => (
+            <tr key={p.id}>
+              <td>{p.label}</td>
+              <td>{p.date}</td>
+              <td>{fmt(p.percent)} %</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </figure>
+  );
+}
+
 /** Liste de pourcentages en barres horizontales, valeur écrite en clair. */
 export function PercentBars({
   rows,

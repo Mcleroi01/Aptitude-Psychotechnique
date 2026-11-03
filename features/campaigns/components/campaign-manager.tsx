@@ -156,11 +156,6 @@ export function CampaignManager({ slug, campaign, participationUrl }: { slug: st
         </section>
       )}
 
-      {campaign.accessMode === "INVITE_ONLY" && !readOnly && (
-        <p className="rounded-lg border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
-          L&apos;envoi des invitations par e-mail sera disponible avec le module d&apos;invitations.
-        </p>
-      )}
 
       <section className="rounded-xl border bg-card p-5 sm:p-6">
         <h2 className="font-heading text-base font-semibold">Réglages</h2>

@@ -11,6 +11,9 @@ const BUCKET_BY_KIND: Record<UploadKind, string> = {
 
 const READ_URL_TTL_SECONDS = 60 * 60;
 
+/** Dossier logique dans le préfixe d'une banque : questions ou bibliothèque. */
+export type StorageFolder = "questions" | "library";
+
 /** Préfixe de stockage d'une banque : chaque organisation a son propre dossier. */
 export function bankStoragePrefix(organizationId: string | null): string {
   return organizationId ? `org-${organizationId}` : "platform";
@@ -25,12 +28,13 @@ export async function createUploadTarget(
   prefix: string,
   kind: UploadKind,
   file: { type: string; size: number },
+  folder: StorageFolder = "questions",
 ): Promise<{ path: string; uploadUrl: string }> {
   const error = uploadError(kind, file);
   if (error) throw new AppError("VALIDATION", error);
 
   const extension = UPLOAD_RULES[kind].types[file.type as keyof (typeof UPLOAD_RULES)[typeof kind]["types"]];
-  const path = `${prefix}/questions/${randomUUID()}.${extension}`;
+  const path = `${prefix}/${folder}/${randomUUID()}.${extension}`;
   const { data, error: storageError } = await getSupabaseAdmin()
     .storage.from(BUCKET_BY_KIND[kind])
     .createSignedUploadUrl(path);
@@ -42,19 +46,23 @@ export async function createUploadTarget(
 }
 
 /** Empêche de rattacher à une question un fichier d'une autre banque. */
-export function assertOwnedPath(prefix: string, path: string | null) {
-  if (path && !(path.startsWith(`${prefix}/questions/`) && !path.includes(".."))) {
+export function assertOwnedPath(prefix: string, path: string | null, folder: StorageFolder = "questions") {
+  if (path && !(path.startsWith(`${prefix}/${folder}/`) && !path.includes(".."))) {
     throw new AppError("FORBIDDEN", "Fichier non autorisé pour cette banque de questions.");
   }
 }
 
 /** URL de lecture temporaire, ou null si le stockage n'est pas disponible. */
-export async function signedReadUrl(kind: UploadKind, path: string | null): Promise<string | null> {
+export async function signedReadUrl(
+  kind: UploadKind,
+  path: string | null,
+  options: { ttlSeconds?: number; downloadName?: string } = {},
+): Promise<string | null> {
   if (!path) return null;
   try {
     const { data, error } = await getSupabaseAdmin()
       .storage.from(BUCKET_BY_KIND[kind])
-      .createSignedUrl(path, READ_URL_TTL_SECONDS);
+      .createSignedUrl(path, options.ttlSeconds ?? READ_URL_TTL_SECONDS, options.downloadName ? { download: options.downloadName } : undefined);
     if (error) throw error;
     return data.signedUrl;
   } catch (error) {

@@ -7,6 +7,8 @@ import { getAppUrl } from "@/lib/app-url";
 import { AppError } from "@/lib/errors";
 import { requireOrgMember } from "@/lib/guards";
 import { getCampaign } from "@/services/campaign.service";
+import { InvitationsPanel } from "@/features/campaigns/components/invitations-panel";
+import { listInvitations } from "@/services/invitation.service";
 
 export const metadata: Metadata = { title: "Campagne" };
 
@@ -21,6 +23,7 @@ export default async function CampaignPage({ params }: PageProps<"/organisation/
     if (error instanceof AppError && error.code === "NOT_FOUND") notFound();
     throw error;
   }
+  const invitations = await listInvitations(organization.id, campaign.id);
 
   return (
     <>
@@ -50,6 +53,14 @@ export default async function CampaignPage({ params }: PageProps<"/organisation/
             attempts: campaign._count.attempts,
             invitations: campaign._count.invitations,
           }}
+        />
+      </div>
+      <div className="mt-8">
+        <InvitationsPanel
+          slug={organization.slug}
+          campaignId={campaign.id}
+          campaignStatus={campaign.status}
+          invitations={invitations.map(({ _count, ...inv }) => ({ ...inv, attempts: _count.attempts }))}
         />
       </div>
     </>

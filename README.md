@@ -9,8 +9,8 @@ Le moteur est **générique** : aucun nombre de questions, aucune durée ni aucu
 « 15 questions en 15 minutes » n'est qu'un modèle d'évaluation fourni en exemple (seed). La plateforme est
 indépendante : elle n'est affiliée à aucun employeur ni organisme de recrutement.
 
-> État : phases 1 à 8 terminées (architecture, interface publique, comptes et organisations, banques et éditeur de
-> questions, évaluations et campagnes, passage des épreuves, correction et rapports, import). Une évaluation utilisée par une campagne publiée est
+> État : phases 1 à 9 terminées (architecture, interface publique, comptes et organisations, banques et éditeur de
+> questions, évaluations et campagnes, passage des épreuves, correction et rapports, import, invitations, tableau de bord et bibliothèque). Une évaluation utilisée par une campagne publiée est
 > figée : on la duplique pour créer une variante.
 
 ## Passage des épreuves
@@ -42,6 +42,16 @@ indépendante : elle n'est affiliée à aucun employeur ni organisme de recrutem
 - **PDF et images** : transcription assistée, document affiché à côté du formulaire. Aucune réponse n'est extraite
   automatiquement ; l'architecture (lots `ImportJob` / `ImportItem`) permet d'ajouter plus tard une extraction, qui
   resterait soumise à la même validation humaine.
+
+## Invitations, tableau de bord, bibliothèque
+
+- **Invitations** : liste collée (une personne par ligne), lien personnel par e-mail (jeton haché), renvoi et
+  révocation. Le candidat doit se connecter avec l'adresse invitée. Envoi possible seulement si la campagne est publiée
+  et si le propriétaire a confirmé son adresse ; 100 envois par jour et par organisation.
+- **Tableau de bord candidat** : tentatives, score moyen et meilleur score, progression, réussite par catégorie et
+  catégories à retravailler, invitations reçues. Les campagnes aux résultats masqués n'y figurent pas.
+- **Bibliothèque** (`/bibliotheque`, gérée dans `/admin/bibliotheque`) : fichiers dans le bucket privé, téléchargement
+  par URL signée de 5 minutes, statut de vérification affiché ; un document non vérifié porte un avertissement explicite.
 
 ## Animations
 

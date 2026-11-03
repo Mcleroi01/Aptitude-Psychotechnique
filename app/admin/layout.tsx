@@ -9,6 +9,7 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
     { href: "/admin/categories", label: "Catégories" },
     { href: "/admin/import", label: "Import" },
     { href: "/admin/evaluations", label: "Évaluations" },
+    { href: "/admin/bibliotheque", label: "Bibliothèque" },
   ];
   return (
     <AppShell user={user} context="Administration" nav={nav}>
