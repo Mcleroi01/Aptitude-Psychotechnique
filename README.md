@@ -9,7 +9,7 @@ Le moteur est **générique** : aucun nombre de questions, aucune durée ni aucu
 « 15 questions en 15 minutes » n'est qu'un modèle d'évaluation fourni en exemple (seed). La plateforme est
 indépendante : elle n'est affiliée à aucun employeur ni organisme de recrutement.
 
-> État : phases 1 à 9 terminées (architecture, interface publique, comptes et organisations, banques et éditeur de
+> État : les 10 phases sont terminées (architecture, interface publique, comptes et organisations, banques et éditeur de
 > questions, évaluations et campagnes, passage des épreuves, correction et rapports, import, invitations, tableau de bord et bibliothèque). Une évaluation utilisée par une campagne publiée est
 > figée : on la duplique pour créer une variante.
 
@@ -125,6 +125,11 @@ Principes de sécurité :
 - **Limitation des connexions** : 5 échecs par e-mail et 20 par IP sur 15 minutes (table `LoginAttempt`, sans Redis).
 - **Secrets** : `server-only` empêche d'importer la clé Supabase `service_role` ou Prisma dans du code client.
 - **Erreurs** : `runAction()` (`lib/errors.ts`) renvoie un résultat uniforme et masque les détails internes.
+- **En-têtes HTTP** (`next.config.ts`) : Content-Security-Policy (scripts limités à l'origine, Supabase seule origine
+  tierce pour les fichiers), HSTS en production, `X-Frame-Options: DENY`, COOP, `no-store` sur les pages personnelles.
+- **Données personnelles** : jetons (invitations, liens de connexion, invités) stockés hachés ; fichiers dans des buckets
+  privés servis par URL signée temporaire ; exports non mis en cache.
+- **Mot de passe oublié** : le lien de connexion par e-mail sert de récupération ; aucun mot de passe n'est jamais envoyé.
 
 ## Installation locale
 
@@ -158,8 +163,8 @@ npm run dev                 # http://localhost:3000
 | `DIRECT_URL` | oui | Connexion directe (5432) pour migrations et seed |
 | `AUTH_SECRET` | oui | Signature des sessions (≥ 32 caractères, `npx auth secret`) |
 | `AUTH_URL` | non | URL publique ; détectée automatiquement sur Vercel |
-| `NEXT_PUBLIC_SUPABASE_URL` | oui (phase 7) | URL du projet Supabase |
-| `SUPABASE_SERVICE_ROLE_KEY` | oui (phase 7) | Clé serveur pour le stockage, jamais exposée au client |
+| `NEXT_PUBLIC_SUPABASE_URL` | oui | URL du projet Supabase |
+| `SUPABASE_SERVICE_ROLE_KEY` | oui | Clé serveur pour le stockage, jamais exposée au client |
 | `RESEND_API_KEY` | oui en production | Envoi des e-mails ; sans clé en développement, les liens s'affichent dans la console du serveur |
 | `EMAIL_FROM` | avec Resend | Expéditeur sur un domaine vérifié dans Resend, ex. `Aptitude <noreply@votre-domaine.com>` |
 | `CRON_SECRET` | en production | Secret de la tâche planifiée de clôture des tentatives (Vercel l'envoie automatiquement) |
@@ -172,21 +177,63 @@ npm run dev                 # http://localhost:3000
 |---|---|
 | `npm run dev` | Serveur de développement |
 | `npm run build` | `prisma generate` + build de production |
-| `npm run typecheck` / `npm run lint` / `npm test` | Vérifications |
+| `npm run typecheck` / `npm run lint` / `npm test` | Vérifications (aussi exécutées par GitHub Actions, `.github/workflows/ci.yml`) |
 | `npm run db:migrate` | Crée et applique une migration (développement) |
 | `npm run db:deploy` | Applique les migrations existantes (production) |
 | `npm run db:seed` | Données initiales (idempotent) |
 | `npm run db:studio` | Explorateur de base Prisma |
 | `npm run storage:setup` | Crée ou met à jour les buckets Supabase Storage (idempotent) |
 
-## Déploiement sur Vercel
+## Mise en production (GitHub + Vercel + Supabase + Resend)
 
-1. Pousser le dépôt sur GitHub, puis l'importer dans Vercel (framework détecté : Next.js).
-2. Renseigner toutes les variables ci-dessus dans **Settings → Environment Variables**.
-3. `vercel.json` définit la commande de build `npm run vercel-build`
-   (`prisma generate && prisma migrate deploy && next build`) : les migrations sont appliquées automatiquement
-   avant chaque build. Il déclare aussi la tâche planifiée quotidienne (offre gratuite : une exécution par jour).
-4. Lancer le seed une fois depuis votre poste, pointé sur la base de production : `npm run db:seed`.
+Le code est sur **GitHub**, l'application tourne sur **Vercel**, la base PostgreSQL et les fichiers sont chez
+**Supabase**, les e-mails passent par **Resend**. Rien n'est stocké sur Vercel.
+
+### 1. Supabase (base et fichiers)
+
+1. Créer un projet **de production** (distinct de celui de développement), région proche des utilisateurs.
+2. Relever les chaînes de connexion (*Transaction pooler* 6543 et *Session pooler* 5432), l'URL et la clé `service_role`.
+3. Depuis votre poste, avec un `.env` pointant vers ce projet :
+
+```bash
+npm run db:deploy        # tables
+npm run db:seed          # catégories, questions originales, examen d'exemple, super-administrateur
+npm run storage:setup    # buckets privés
+```
+
+### 2. GitHub (code)
+
+Créer un dépôt **privé**, puis depuis `app-web/` (racine du dépôt git) :
+
+```bash
+git remote add origin https://github.com/<compte>/<depot>.git
+git push -u origin main
+```
+
+Le fichier `.env` est ignoré par git : aucun secret n'est publié. GitHub Actions vérifie chaque push.
+
+### 3. Resend (e-mails)
+
+Ajouter et vérifier votre nom de domaine (enregistrements DNS fournis par Resend), créer une clé API, choisir
+l'expéditeur, par exemple `Aptitude Psychotechnique <noreply@votre-domaine.com>`.
+
+### 4. Vercel (application)
+
+1. **Add New → Project**, importer le dépôt GitHub (framework détecté : Next.js). `vercel.json` définit la commande de
+   build (`prisma generate && prisma migrate deploy && next build`) et la tâche planifiée quotidienne.
+2. **Settings → Environment Variables** (environnement *Production*) :
+   `DATABASE_URL`, `DIRECT_URL`, `AUTH_SECRET` (nouvelle valeur, `npx auth secret`), `AUTH_URL` et `APP_URL`
+   (`https://votre-domaine`), `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`, `EMAIL_FROM`,
+   `CRON_SECRET` (valeur aléatoire). Les variables `SEED_*` ne servent qu'en local.
+3. Déployer, puis **Settings → Domains** pour rattacher votre nom de domaine.
+
+### 5. Vérifications après déploiement
+
+- `https://votre-domaine/api/health` répond `{"status":"ok","database":"ok"}`.
+- Connexion du super-administrateur (`/connexion`), puis `/admin`.
+- Lien de connexion par e-mail reçu ; inscription d'une organisation ; création d'une question, d'une évaluation,
+  d'une campagne ; invitation envoyée à une adresse de test ; passage complet de l'épreuve.
+- **Vercel → Settings → Cron Jobs** : la tâche `/api/cron/expire-attempts` apparaît.
 
 ## Offres gratuites et coûts
 
@@ -196,7 +243,9 @@ npm run dev                 # http://localhost:3000
 | Supabase Free | 500 Mo de base, 1 Go de stockage, mise en pause après 7 jours d'inactivité | Plan Pro, environ 25 $/mois |
 | Resend Free | 3 000 e-mails/mois, 100/jour, un domaine | Plan payant, environ 20 $/mois |
 
-Un usage commercial (abonnements payants) impose le plan Vercel Pro.
+**Important** : l'offre Vercel Hobby est réservée à un usage non commercial. Dès que la plateforme est vendue à des
+entreprises (abonnements, prestations), le plan Vercel Pro est requis. Sur l'offre gratuite Supabase, un projet inactif
+pendant 7 jours est mis en pause (réactivation en un clic) : l'activité réelle des utilisateurs suffit à l'éviter.
 
 ## Avertissements sur les contenus
 

@@ -5,6 +5,8 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
   const user = await requireSuperAdmin();
   const nav = [
     { href: "/admin", label: "Vue d'ensemble", exact: true },
+    { href: "/admin/organisations", label: "Organisations" },
+    { href: "/admin/comptes", label: "Comptes" },
     { href: "/admin/questions", label: "Banque Aptitude" },
     { href: "/admin/categories", label: "Catégories" },
     { href: "/admin/import", label: "Import" },

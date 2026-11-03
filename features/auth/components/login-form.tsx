@@ -63,6 +63,9 @@ export function LoginForm({ callbackUrl }: { callbackUrl?: string }) {
         {pending && <Loader2 className="animate-spin" data-icon="inline-start" />}
         Se connecter
       </Button>
+      <p className="text-center text-xs text-muted-foreground">
+        Mot de passe oublié ? Utilisez l&apos;onglet « Lien par e-mail » : vous serez connecté sans mot de passe.
+      </p>
     </form>
   );
 }
