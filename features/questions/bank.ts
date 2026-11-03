@@ -22,5 +22,7 @@ export function bankPaths(ref: BankRef) {
     assessments: `${root}/evaluations`,
     assessment: (id: string) => `${root}/evaluations/${id}`,
     assessmentPreview: (id: string) => `${root}/evaluations/${id}/apercu`,
+    imports: `${root}/import`,
+    importJob: (id: string) => `${root}/import/${id}`,
   };
 }

@@ -14,6 +14,7 @@ export default async function OrganisationLayout({ children, params }: LayoutPro
       ? [
           { href: `${base}/questions`, label: "Banque de questions" },
           { href: `${base}/categories`, label: "Catégories" },
+          { href: `${base}/import`, label: "Import" },
         ]
       : []),
     ...(can(role, "assessments:write") ? [{ href: `${base}/evaluations`, label: "Évaluations" }] : []),

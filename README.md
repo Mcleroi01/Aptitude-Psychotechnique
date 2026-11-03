@@ -9,8 +9,8 @@ Le moteur est **générique** : aucun nombre de questions, aucune durée ni aucu
 « 15 questions en 15 minutes » n'est qu'un modèle d'évaluation fourni en exemple (seed). La plateforme est
 indépendante : elle n'est affiliée à aucun employeur ni organisme de recrutement.
 
-> État : phases 1 à 7 terminées (architecture, interface publique, comptes et organisations, banques et éditeur de
-> questions, évaluations et campagnes, passage des épreuves, correction et rapports). Une évaluation utilisée par une campagne publiée est
+> État : phases 1 à 8 terminées (architecture, interface publique, comptes et organisations, banques et éditeur de
+> questions, évaluations et campagnes, passage des épreuves, correction et rapports, import). Une évaluation utilisée par une campagne publiée est
 > figée : on la duplique pour créer une variante.
 
 ## Passage des épreuves
@@ -31,6 +31,17 @@ indépendante : elle n'est affiliée à aucun employeur ni organisme de recrutem
   exigent un compte.
 - **Lien de connexion par e-mail** : connecte un compte existant ou le crée au premier clic (15 minutes, usage unique,
   consommé au clic pour résister aux antivirus de messagerie). La réponse ne révèle pas si l'adresse a un compte.
+
+## Import de questionnaires
+
+- **CSV et Excel** (`.xlsx`) : lus dans le navigateur (`papaparse`, `read-excel-file`), seules les lignes sont
+  envoyées ; 500 lignes et 2 Mo au maximum. Modèle téléchargeable : `/api/import/modele` (une ligne par question,
+  en-têtes en français, voir `lib/imports/rows.ts`).
+- Chaque ligne est convertie puis validée par **le même schéma que l'éditeur** ; les erreurs sont expliquées ligne par
+  ligne. On corrige dans l'éditeur, on approuve ou on rejette, puis on importe (en brouillon par défaut).
+- **PDF et images** : transcription assistée, document affiché à côté du formulaire. Aucune réponse n'est extraite
+  automatiquement ; l'architecture (lots `ImportJob` / `ImportItem`) permet d'ajouter plus tard une extraction, qui
+  resterait soumise à la même validation humaine.
 
 ## Animations
 

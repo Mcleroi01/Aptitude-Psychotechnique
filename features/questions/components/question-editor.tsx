@@ -39,11 +39,27 @@ type Props = {
   listPath: string;
   /** La question a déjà servi : l'enregistrement créera une nouvelle version */
   versionedOnSave: boolean;
+  /**
+   * Enregistrement personnalisé (ex. ligne d'import) à la place de la banque.
+   * Renvoie un message d'erreur, ou null en cas de succès.
+   */
+  onSave?: (values: QuestionEditorValues, status: "DRAFT" | "PUBLISHED") => Promise<string | null>;
+  labels?: { draft: string; publish: string };
 };
 
 const MAX_OPTIONS = 10;
 
-export function QuestionEditor({ bank, questionId, initialValues, initialMedia, categories, listPath, versionedOnSave }: Props) {
+export function QuestionEditor({
+  bank,
+  questionId,
+  initialValues,
+  initialMedia,
+  categories,
+  listPath,
+  versionedOnSave,
+  onSave,
+  labels = { draft: "Enregistrer en brouillon", publish: "Publier" },
+}: Props) {
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -89,6 +105,11 @@ export function QuestionEditor({ bank, questionId, initialValues, initialMedia, 
       (data) => {
         setServerError(null);
         startTransition(async () => {
+          if (onSave) {
+            const failure = await onSave(data, status);
+            if (failure) setServerError(failure);
+            return;
+          }
           const result = await saveQuestionAction(bank, questionId, { values: data, status });
           if (!result.ok) {
             for (const [field, messages] of Object.entries(result.error.fieldErrors ?? {})) {
@@ -405,13 +426,13 @@ export function QuestionEditor({ bank, questionId, initialValues, initialMedia, 
           </FieldGroup>
         </Panel>
 
-        <div className="sticky bottom-0 -mx-4 flex flex-wrap justify-end gap-2 border-t bg-background/95 px-4 py-3 backdrop-blur sm:mx-0 sm:rounded-lg sm:border">
+        <div className="sticky bottom-0 -mx-4 flex flex-wrap justify-end gap-2 border-t bg-background px-4 py-3 sm:mx-0 sm:rounded-lg sm:border">
           <Button type="button" variant="outline" size="lg" disabled={pending} onClick={() => submit("DRAFT")}>
-            Enregistrer en brouillon
+            {labels.draft}
           </Button>
           <Button type="button" size="lg" disabled={pending} onClick={() => submit("PUBLISHED")}>
             {pending && <Loader2 className="animate-spin" data-icon="inline-start" />}
-            Publier
+            {labels.publish}
           </Button>
         </div>
       </form>
