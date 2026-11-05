@@ -133,3 +133,9 @@ describe("formatage", () => {
     expect(formatPoints(12.5)).toBe("12,5 pt");
   });
 });
+
+describe("règles de tirage enregistrées sans filtres", () => {
+  it("considère une règle sans catégorie ni difficulté comme « toutes »", () => {
+    expect(parseDrawRules([{ count: 15, points: 1 }])).toEqual([{ categoryId: null, difficulty: null, count: 15, points: 1 }]);
+  });
+});

@@ -4,8 +4,9 @@ import { DIFFICULTIES } from "@/lib/questions/labels";
 
 /** Règle de tirage d'une épreuve en mode aléatoire (AssessmentSection.drawRules). */
 export const drawRuleSchema = z.object({
-  categoryId: z.string().max(40).nullable(),
-  difficulty: z.enum(DIFFICULTIES).nullable(),
+  // Absent = « toutes » : une règle écrite sans ces champs (seed, import) reste valide.
+  categoryId: z.string().max(40).nullable().default(null),
+  difficulty: z.enum(DIFFICULTIES).nullable().default(null),
   count: z.number().int().min(1, "Au moins 1 question").max(200, "200 questions maximum"),
   points: z.number().positive("Barème positif attendu").max(1000),
 });

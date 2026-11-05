@@ -92,7 +92,7 @@ async function seedExampleAssessment() {
           title: "Raisonnement numérique",
           instructions: "Une seule bonne réponse par question. Calculatrice non autorisée.",
           selectionMode: "RANDOM",
-          drawRules: [{ count: 15, points: 1 }],
+          drawRules: [{ categoryId: null, difficulty: null, count: 15, points: 1 }],
         },
       },
     },
@@ -108,6 +108,10 @@ async function seedSuperAdmin() {
     return;
   }
   if (password.length < 12) throw new Error("SEED_ADMIN_PASSWORD doit contenir au moins 12 caractères.");
+  // Les valeurs de .env.example sont publiques (dépôt git) : jamais pour un vrai compte.
+  if (email.endsWith("@exemple.cd") || password === "changer-ce-mot-de-passe") {
+    throw new Error("SEED_ADMIN_EMAIL / SEED_ADMIN_PASSWORD ont encore leur valeur d'exemple : renseignez votre adresse et un mot de passe personnel.");
+  }
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
